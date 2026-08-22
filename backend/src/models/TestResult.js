@@ -25,6 +25,10 @@ const testResultSchema = new mongoose.Schema({
   storageDuration: { type: Number, default: 0 },
   storageCondition: { type: String, default: 'Covered Pit' },
   notes: { type: String, default: '' },
+  tempC: { type: Number, default: 32 },
+  humidityPct: { type: Number, default: 65 },
+  smell: { type: String, default: 'Neutral' },
+  analyzedOn: { type: String, default: '' },
   imageName: { type: String, default: 'sample.jpg' },
   image: { type: String }, // Base64 data URL or storage URI
   score: { type: Number, default: 80, min: 0, max: 100 },

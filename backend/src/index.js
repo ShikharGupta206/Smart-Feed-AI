@@ -9,6 +9,7 @@ import reportRoutes from './routes/reportRoutes.js'
 import assistantRoutes from './routes/assistantRoutes.js'
 import analyticsRoutes from './routes/analyticsRoutes.js'
 import coachRoutes from './routes/coachRoutes.js'
+import milkYieldRoutes from './routes/milkYieldRoutes.js'
 import { getTestQR } from './controllers/testController.js'
 import { generateAdvisoriesForParameters } from './utils/mockParameters.js'
 import { authMiddleware } from './middlewares/auth.js'
@@ -67,6 +68,7 @@ app.use('/api/reports', reportRoutes)
 app.use('/api/assistant', assistantRoutes)
 app.use('/api/analytics', analyticsRoutes)
 app.use('/api/silage-coach', coachRoutes)
+app.use('/api/milk-yield', milkYieldRoutes)
 
 // 404 & Error Handlers
 app.use(notFoundHandler)

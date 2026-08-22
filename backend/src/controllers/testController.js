@@ -29,7 +29,10 @@ export async function createTest(req, res, next) {
       storageDuration = 0,
       storageCondition = 'Covered Pit',
       notes = '',
-      batchId
+      batchId,
+      tempC = 32,
+      humidityPct = 65,
+      smell = 'Neutral'
     } = req.body
 
     console.log(`[TestController] Analyzing new ${sampleType} sample (${feedType}) for farmer ${farmerId}...`)
@@ -40,11 +43,16 @@ export async function createTest(req, res, next) {
       feedType,
       storageDuration: Number(storageDuration) || 0,
       storageCondition,
-      notes
+      notes,
+      tempC: Number(tempC) || 32,
+      humidityPct: Number(humidityPct) || 65,
+      smell
     })
 
     const sampleId = generateSampleId()
     const recordId = new mongoose.Types.ObjectId().toString()
+
+    const analyzedOn = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 
     const newTest = {
       _id: recordId,
@@ -55,9 +63,13 @@ export async function createTest(req, res, next) {
       feedType,
       storageDuration: Number(storageDuration) || 0,
       storageCondition,
+      tempC: Number(tempC) || 32,
+      humidityPct: Number(humidityPct) || 65,
+      smell,
       notes,
       imageName,
       image: image || null,
+      analyzedOn,
       score: aiAnalysis.score || 80,
       overallStatus: aiAnalysis.overallStatus || 'Good',
       confidence: aiAnalysis.confidence || 92,
