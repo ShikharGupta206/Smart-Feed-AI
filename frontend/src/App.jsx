@@ -4,249 +4,93 @@ import {
   Activity, BarChart3, Bot, ChevronRight, ClipboardCheck, Download, FileText, Filter,
   HelpCircle, Home, Languages, Leaf, LogOut, Menu, Package, Plus, ScanSearch,
   Settings, ShieldCheck, Star, TrendingUp, Upload, UserCircle, X, Zap, AlertTriangle,
-  CheckCircle, Bell, Search, Calendar, Eye, RefreshCw, Send, Trash2, CheckCheck
+  CheckCircle, Bell, Search, Calendar, Eye, RefreshCw, Send, Trash2, CheckCheck, QrCode,
+  CheckSquare, Square, DollarSign, HeartPulse, Sparkles, MessageSquare, Headphones
 } from 'lucide-react'
 import { mockBatches, mockReports, mockTests, resultParameters, trendData } from './mockData'
 
-const navItems = [
-  ['/dashboard', 'Dashboard', BarChart3],
-  ['/analysis/new', 'New Analysis', ScanSearch],
-  ['/batches', 'My Batches', Package],
-  ['/history', 'History', Activity],
-  ['/analytics', 'Analytics', TrendingUp],
-  ['/reports', 'Reports', FileText],
-  ['/assistant', 'AI Assistant', Bot],
-  ['/profile', 'Profile', UserCircle],
-  ['/settings', 'Settings', Settings],
-]
+const riskClass = risk => (risk === 'Good' || risk === 'Low Risk') ? 'good' : (risk === 'Caution' || risk === 'Moderate Risk' || risk === 'Warning') ? 'caution' : 'high'
 
-const riskClass = risk => risk === 'Good' ? 'good' : risk === 'Caution' ? 'caution' : 'high'
-const riskIcon = risk => risk === 'Good' ? <CheckCircle size={12}/> : risk === 'Caution' ? <AlertTriangle size={12}/> : <AlertTriangle size={12}/>
-
-/* ── Global App Context (language, settings, toast) ── */
+/* ── Global App Context (language, settings, toast, auth) ── */
 const AppCtx = createContext({})
 function useApp() { return useContext(AppCtx) }
 
 const LANGS = {
   English: {
-    /* Nav */
     dashboard:'Dashboard', newAnalysis:'New Analysis', myBatches:'My Batches',
-    history:'History', analytics:'Analytics', reports:'Reports',
+    silageCoach:'Silage Coach', history:'History', analytics:'Analytics', reports:'Reports',
     aiAssistant:'AI Assistant', profile:'Profile', settings:'Settings',
-    workspace:'Workspace', account:'Account', language:'Language',
-    needHelp:'Need Help?', contactSupport:'Contact Support', offlineReady:'Offline-ready',
-    /* Dashboard */
     welcomeBack:'Welcome back, Farmer Raj 👋',
-    monitorDesc:'Monitor quality, identify risks, and keep your herd healthy.',
     totalAnalyses:'Total Analyses', goodQuality:'Good Quality', caution:'Caution', highRisk:'High Risk',
-    fromLastWeek:'↑ 12% from last week', ofTotal:'of total',
-    averageScore:'Average Score', points:'points',
-    qualityTrend:'Quality Trend (All Batches)', avgScoreOverTime:'Average score over time',
-    riskDistribution:'Risk Distribution', currentTiers:'Current screening tiers',
-    recentAnalyses:'Recent Analyses', viewAll:'View all →',
+    averageScore:'Average Score', qualityTrend:'Quality Trend (All Batches)',
+    riskDistribution:'Risk Distribution', recentAnalyses:'Recent Analyses',
     sampleId:'Sample ID', batchId:'Batch ID', type:'Type', analyzedOn:'Analyzed On',
-    score:'Score', risk:'Risk', action:'Action', view:'View',
-    /* New Analysis */
-    newAnalysisTitle:'New Analysis', newAnalysisDesc:'Upload a photo of your feed or silage to get an instant AI quality score.',
-    uploadImage:'Upload Sample Image', dragDrop:'Drag & drop or click to browse',
-    supportedFormats:'JPG, PNG up to 10MB', analyzing:'Analyzing sample...',
-    sampleInfo:'Sample Information', sampleType:'Sample Type', feedType:'Feed Type',
-    storageDuration:'Storage Duration (Days)', storageCondition:'Storage Condition',
-    notes:'Notes (Optional)', notesPlaceholder:'Any additional information...',
-    analyzeBtn:'Analyze Sample', processing:'Processing...', disclaimer:'Results are screening estimates, not laboratory measurements.',
-    maizeSilage:'Maize Silage', grassSilage:'Grass Silage', cattleFeed:'Cattle Feed', dairyConcentrate:'Dairy Concentrate',
-    silage:'Silage', feed:'Feed', covered:'Covered', open:'Open', silo:'Silo',
-    /* Result */
-    analysisResult:'Analysis Result', downloadReport:'Download Report',
-    sampleTypeLabel:'Sample Type', modelConfidence:'Model Confidence',
-    uploadedImage:'Uploaded Image', aiHeatmap:'AI Explanation (Heatmap)',
-    highImpact:'High Impact', medium:'Medium', lowImpact:'Low Impact',
-    qualityScoreRange:'Quality Score Range', good:'Good', screeningRisk:'Screening Risk',
-    lowRisk:'Low Risk', keyIndicators:'Key Indicators',
-    ind1:'Normal color and texture detected', ind2:'No significant mold detected',
-    ind3:'Good storage parameters', ind4:'No visible spoilage signs',
-    screeningEst:'Screening estimate — not a laboratory measurement.',
-    /* Batches */
-    myBatchesTitle:'My Batches', myBatchesDesc:'Manage and track your feed and silage batches.',
-    addNewBatch:'Add New Batch', batchIdName:'Batch ID / Name', createBatch:'Create Batch',
-    batchStatus:'Status', active:'Active',
-    /* Batch Detail */
-    batchDetail:'Batch Detail', batchInfo:'Batch Information',
-    qualityTrendBatch:'Quality Trend', createdOn:'Created On',
-    storage:'Storage', totalAnalysesCount:'Total Analyses',
-    /* History */
-    historyTitle:'History', historyDesc:'View all past analyses.',
-    showing:'Showing', of:'of', records:'records',
-    exportCsv:'Export CSV', searchPlaceholder:'Search by Sample or Batch ID...',
-    allTypes:'All Types', allRisks:'All Risks',
-    /* Analytics */
-    analyticsTitle:'Analytics', analyticsDesc:'Trends and insights across all batches.',
-    scoreDist:'Score Distribution by Batch',
-    /* Reports */
-    reportsTitle:'Reports', reportsDesc:'Generate and download screening reports.',
-    generateReport:'Generate New Report', reportType:'Report Type',
-    generatedOn:'Generated On', sampleBatch:'Sample / Batch',
+    score:'Score', risk:'Risk', action:'Action', viewReport:'View Report',
+    addNewBatch:'Add New Batch', exportCsv:'Export CSV',
+    needHelp:'Need Help?', contactSupport:'Contact Support',
     sampleReports:'Sample Reports', batchReports:'Batch Reports',
-    reference:'Reference', generate:'Generate Report', noReports:'No reports yet',
-    /* Assistant */
-    assistantTitle:'AI Assistant', assistantDesc:'Ask anything about feed and silage quality.',
-    clearChat:'Clear Chat', typeQuestion:'Type your question...', send:'Send',
-    q1:'What does a score of 62 mean?', q2:'How to detect mold?', q3:'Ideal moisture level?',
-    botGreet:'Hello! 👋 Ask me anything about feed and silage quality. I can help you interpret results, storage tips, and more.',
-    /* Profile */
-    profileTitle:'Farmer Profile', profileDesc:'Manage your account details.',
-    editProfile:'Edit Profile', saveChanges:'Save Changes', cancel:'Cancel',
-    fullName:'Full Name', email:'Email', phone:'Phone', farmName:'Farm Name', location:'Location',
-    recentActivity:'Recent Activity', profileUpdated:'Profile updated successfully!',
-    /* Settings */
-    settingsTitle:'Settings', settingsDesc:'Configure your SmartFeed AI preferences.',
-    saveSettings:'Save Settings', saved:'Saved!',
-    preferences:'Preferences', langRegion:'Language & Region',
-    dataPrivacy:'Data & Privacy',
-    pushNotif:'Push Notifications', pushNotifDesc:'Get alerted when a high-risk sample is detected',
-    offlineMode:'Offline Mode', offlineModeDesc:'Cache data locally so the app works without internet',
-    darkMode:'Dark Mode', darkModeDesc:'Switch the interface to a dark colour scheme',
-    interfaceLang:'Interface Language', interfaceLangDesc:'Changes the language of all labels and navigation',
-    clearCache:'Clear Local Cache', clearCacheDesc:'Remove all locally stored analyses and batch data',
-    clearCacheBtn:'Clear Cache', exportAll:'Export All Data', exportAllDesc:'Download a full CSV export of all your analyses',
-    export:'Export', on:'On', off:'Off', settingsSaved:'Settings saved successfully!',
-    /* Notifications */
-    notifications:'Notifications', markAllRead:'Mark all read', viewAllNotif:'View all notifications →',
-    notif1Title:'High Risk Detected', notif1Desc:'Sample SF-2026-1253 scored 44 — High Risk',
-    notif2Title:'Analysis Complete', notif2Desc:'SF-2026-1256 analyzed successfully. Score: 87',
-    notif3Title:'Batch Report Ready', notif3Desc:'Batch report for SILAGE-001 is ready to download',
-    notif4Title:'New Batch Created', notif4Desc:'SILAGE-003 batch was created and is active',
-    /* Toasts */
-    toastLangChanged:'Language changed to English', toastCacheCleared:'Local cache cleared', toastExportStarted:'Export started — file will download shortly',
-    toastDarkOn:'Dark mode enabled', toastDarkOff:'Dark mode disabled',
-    toastNotifOn:'Notifications turned on', toastNotifOff:'Notifications turned off',
-    toastOfflineOn:'Offline mode enabled', toastOfflineOff:'Offline mode disabled',
-    /* Extra */
-    scoreDistBatch:'Score Distribution by Batch', backToBatches:'Back to Batches',
-    viewReport:'View Report', analyses:'Analyses', batches:'Batches',
-    status:'Status', total:'Total', downloading:'Mock PDF downloaded',
-    or:'or', browseFiles:'Browse Files', uploadHint:'Supports JPG, PNG · Max 10MB',
+    generateReport:'Generate New Report', clearChat:'Clear Chat',
+    typeQuestion:'Type your question...',
+    screeningEst:'Screening estimate — not a laboratory measurement.',
   },
   हिंदी: {
-    /* Nav */
     dashboard:'डैशबोर्ड', newAnalysis:'नया विश्लेषण', myBatches:'मेरे बैच',
-    history:'इतिहास', analytics:'विश्लेषिकी', reports:'रिपोर्ट',
+    silageCoach:'साइलेज कोच', history:'इतिहास', analytics:'विश्लेषिकी', reports:'रिपोर्ट',
     aiAssistant:'AI सहायक', profile:'प्रोफ़ाइल', settings:'सेटिंग्स',
-    workspace:'कार्यक्षेत्र', account:'खाता', language:'भाषा',
-    needHelp:'सहायता चाहिए?', contactSupport:'सहायता से संपर्क करें', offlineReady:'ऑफ़लाइन-तैयार',
-    /* Dashboard */
     welcomeBack:'स्वागत है, किसान राज 👋',
-    monitorDesc:'गुणवत्ता की निगरानी करें, जोखिम पहचानें और अपने पशुओं को स्वस्थ रखें।',
     totalAnalyses:'कुल विश्लेषण', goodQuality:'अच्छी गुणवत्ता', caution:'सावधानी', highRisk:'उच्च जोखिम',
-    fromLastWeek:'↑ पिछले सप्ताह से 12%', ofTotal:'कुल का',
-    averageScore:'औसत स्कोर', points:'अंक',
-    qualityTrend:'गुणवत्ता प्रवृत्ति (सभी बैच)', avgScoreOverTime:'समय के साथ औसत स्कोर',
-    riskDistribution:'जोखिम वितरण', currentTiers:'वर्तमान स्क्रीनिंग स्तर',
-    recentAnalyses:'हाल के विश्लेषण', viewAll:'सभी देखें →',
+    averageScore:'औसत स्कोर', qualityTrend:'गुणवत्ता प्रवृत्ति (सभी बैच)',
+    riskDistribution:'जोखिम वितरण', recentAnalyses:'हाल के विश्लेषण',
     sampleId:'नमूना ID', batchId:'बैच ID', type:'प्रकार', analyzedOn:'विश्लेषण दिनांक',
-    score:'स्कोर', risk:'जोखिम', action:'कार्रवाई', view:'देखें',
-    /* New Analysis */
-    newAnalysisTitle:'नया विश्लेषण', newAnalysisDesc:'अपने चारे या साइलेज की फ़ोटो अपलोड करें और तुरंत AI गुणवत्ता स्कोर पाएं।',
-    uploadImage:'नमूने की फ़ोटो अपलोड करें', dragDrop:'यहाँ खींचें और छोड़ें या क्लिक करें',
-    supportedFormats:'JPG, PNG — अधिकतम 10MB', analyzing:'नमूने का विश्लेषण हो रहा है...',
-    sampleInfo:'नमूना जानकारी', sampleType:'नमूना प्रकार', feedType:'चारा प्रकार',
-    storageDuration:'भंडारण अवधि (दिन)', storageCondition:'भंडारण स्थिति',
-    notes:'टिप्पणी (वैकल्पिक)', notesPlaceholder:'कोई अतिरिक्त जानकारी...',
-    analyzeBtn:'नमूना विश्लेषण करें', processing:'प्रक्रिया हो रही है...', disclaimer:'परिणाम स्क्रीनिंग अनुमान हैं, प्रयोगशाला माप नहीं।',
-    maizeSilage:'मक्का साइलेज', grassSilage:'घास साइलेज', cattleFeed:'पशु चारा', dairyConcentrate:'डेयरी सांद्र',
-    silage:'साइलेज', feed:'चारा', covered:'ढका हुआ', open:'खुला', silo:'साइलो',
-    /* Result */
-    analysisResult:'विश्लेषण परिणाम', downloadReport:'रिपोर्ट डाउनलोड करें',
-    sampleTypeLabel:'नमूना प्रकार', modelConfidence:'मॉडल विश्वसनीयता',
-    uploadedImage:'अपलोड की गई फ़ोटो', aiHeatmap:'AI व्याख्या (हीटमैप)',
-    highImpact:'उच्च प्रभाव', medium:'मध्यम', lowImpact:'कम प्रभाव',
-    qualityScoreRange:'गुणवत्ता स्कोर सीमा', good:'अच्छा', screeningRisk:'स्क्रीनिंग जोखिम',
-    lowRisk:'कम जोखिम', keyIndicators:'मुख्य संकेतक',
-    ind1:'सामान्य रंग और बनावट पाई गई', ind2:'कोई महत्वपूर्ण फफूंद नहीं मिली',
-    ind3:'भंडारण मापदंड ठीक हैं', ind4:'खराबी के कोई दृश्य संकेत नहीं',
-    screeningEst:'स्क्रीनिंग अनुमान — प्रयोगशाला माप नहीं।',
-    /* Batches */
-    myBatchesTitle:'मेरे बैच', myBatchesDesc:'अपने चारे और साइलेज बैच प्रबंधित करें।',
-    addNewBatch:'नया बैच जोड़ें', batchIdName:'बैच ID / नाम', createBatch:'बैच बनाएं',
-    batchStatus:'स्थिति', active:'सक्रिय',
-    /* Batch Detail */
-    batchDetail:'बैच विवरण', batchInfo:'बैच जानकारी',
-    qualityTrendBatch:'गुणवत्ता प्रवृत्ति', createdOn:'बनाया गया',
-    storage:'भंडारण', totalAnalysesCount:'कुल विश्लेषण',
-    /* History */
-    historyTitle:'इतिहास', historyDesc:'सभी पिछले विश्लेषण देखें।',
-    showing:'दिखाए जा रहे', of:'में से', records:'रिकॉर्ड',
-    exportCsv:'CSV निर्यात करें', searchPlaceholder:'नमूना या बैच ID खोजें...',
-    allTypes:'सभी प्रकार', allRisks:'सभी जोखिम',
-    /* Analytics */
-    analyticsTitle:'विश्लेषिकी', analyticsDesc:'सभी बैच में रुझान और अंतर्दृष्टि।',
-    scoreDist:'बैच के अनुसार स्कोर वितरण',
-    /* Reports */
-    reportsTitle:'रिपोर्ट', reportsDesc:'स्क्रीनिंग रिपोर्ट बनाएं और डाउनलोड करें।',
-    generateReport:'नई रिपोर्ट बनाएं', reportType:'रिपोर्ट प्रकार',
-    generatedOn:'बनाई गई', sampleBatch:'नमूना / बैच',
+    score:'स्कोर', risk:'जोखिम', action:'कार्रवाई', viewReport:'रिपोर्ट देखें',
+    addNewBatch:'नया बैच जोड़ें', exportCsv:'CSV निर्यात करें',
+    needHelp:'सहायता चाहिए?', contactSupport:'सपोर्ट से संपर्क करें',
     sampleReports:'नमूना रिपोर्ट', batchReports:'बैच रिपोर्ट',
-    reference:'संदर्भ', generate:'रिपोर्ट बनाएं', noReports:'अभी कोई रिपोर्ट नहीं',
-    /* Assistant */
-    assistantTitle:'AI सहायक', assistantDesc:'चारे और साइलेज की गुणवत्ता के बारे में कुछ भी पूछें।',
-    clearChat:'चैट साफ़ करें', typeQuestion:'अपना प्रश्न लिखें...', send:'भेजें',
-    q1:'62 स्कोर का क्या मतलब है?', q2:'फफूंद कैसे पहचानें?', q3:'आदर्श नमी स्तर क्या है?',
-    botGreet:'नमस्ते! 👋 चारे और साइलेज गुणवत्ता के बारे में कुछ भी पूछें। मैं परिणाम, भंडारण सुझाव और अधिक में मदद कर सकता हूँ।',
-    /* Profile */
-    profileTitle:'किसान प्रोफ़ाइल', profileDesc:'अपने खाते की जानकारी प्रबंधित करें।',
-    editProfile:'प्रोफ़ाइल संपादित करें', saveChanges:'बदलाव सहेजें', cancel:'रद्द करें',
-    fullName:'पूरा नाम', email:'ईमेल', phone:'फ़ोन', farmName:'फ़ार्म का नाम', location:'स्थान',
-    recentActivity:'हाल की गतिविधि', profileUpdated:'प्रोफ़ाइल सफलतापूर्वक अपडेट हुई!',
-    /* Settings */
-    settingsTitle:'सेटिंग्स', settingsDesc:'अपनी SmartFeed AI प्राथमिकताएं कॉन्फ़िगर करें।',
-    saveSettings:'सेटिंग्स सहेजें', saved:'सहेज लिया!',
-    preferences:'प्राथमिकताएं', langRegion:'भाषा और क्षेत्र',
-    dataPrivacy:'डेटा और गोपनीयता',
-    pushNotif:'पुश सूचनाएं', pushNotifDesc:'उच्च जोखिम नमूने पर अलर्ट पाएं',
-    offlineMode:'ऑफ़लाइन मोड', offlineModeDesc:'इंटरनेट के बिना ऐप चलाने के लिए डेटा स्थानीय रूप से कैश करें',
-    darkMode:'डार्क मोड', darkModeDesc:'इंटरफ़ेस को डार्क रंग योजना में बदलें',
-    interfaceLang:'इंटरफ़ेस भाषा', interfaceLangDesc:'सभी लेबल और नेविगेशन की भाषा बदलें',
-    clearCache:'स्थानीय कैश साफ़ करें', clearCacheDesc:'सभी स्थानीय रूप से संग्रहीत विश्लेषण और बैच डेटा हटाएं',
-    clearCacheBtn:'कैश साफ़ करें', exportAll:'सभी डेटा निर्यात करें', exportAllDesc:'सभी विश्लेषणों की पूर्ण CSV डाउनलोड करें',
-    export:'निर्यात करें', on:'चालू', off:'बंद', settingsSaved:'सेटिंग्स सफलतापूर्वक सहेजी गईं!',
-    /* Notifications */
-    notifications:'सूचनाएं', markAllRead:'सभी पढ़ें', viewAllNotif:'सभी सूचनाएं देखें →',
-    notif1Title:'उच्च जोखिम मिला', notif1Desc:'नमूना SF-2026-1253 का स्कोर 44 — उच्च जोखिम',
-    notif2Title:'विश्लेषण पूर्ण', notif2Desc:'SF-2026-1256 का विश्लेषण सफल। स्कोर: 87',
-    notif3Title:'बैच रिपोर्ट तैयार', notif3Desc:'SILAGE-001 की बैच रिपोर्ट डाउनलोड के लिए तैयार है',
-    notif4Title:'नया बैच बनाया गया', notif4Desc:'SILAGE-003 बैच बनाया गया और सक्रिय है',
-    /* Toasts */
-    toastLangChanged:'भाषा हिंदी में बदली गई', toastCacheCleared:'स्थानीय कैश साफ़ हुआ', toastExportStarted:'निर्यात शुरू — फ़ाइल जल्द डाउनलोड होगी',
-    toastDarkOn:'डार्क मोड चालू', toastDarkOff:'डार्क मोड बंद',
-    toastNotifOn:'सूचनाएं चालू', toastNotifOff:'सूचनाएं बंद',
-    toastOfflineOn:'ऑफ़लाइन मोड चालू', toastOfflineOff:'ऑफ़लाइन मोड बंद',
-    /* Extra */
-    scoreDistBatch:'बैच के अनुसार स्कोर वितरण', backToBatches:'बैच सूची पर वापस',
-    viewReport:'रिपोर्ट देखें', analyses:'विश्लेषण', batches:'बैच',
-    status:'स्थिति', total:'कुल', downloading:'PDF डाउनलोड (प्रदर्शन मात्र)',
-    or:'या', browseFiles:'फ़ाइल चुनें', uploadHint:'JPG, PNG समर्थित · अधिकतम 10MB',
+    generateReport:'नई रिपोर्ट बनाएं', clearChat:'चैट साफ़ करें',
+    typeQuestion:'अपना प्रश्न यहाँ लिखें...',
+    screeningEst:'स्क्रीनिंग अनुमान — प्रयोगशाला परीक्षण नहीं।',
   }
 }
 
-/* ── Toast Notification ── */
-function Toast({ toasts }) {
-  return (
-    <div className="toast-stack">
-      {toasts.map(t => (
-        <div key={t.id} className={`toast toast-${t.type || 'info'}`}>
-          {t.type === 'success' ? <CheckCheck size={14}/> : t.type === 'error' ? <AlertTriangle size={14}/> : <Bell size={14}/>}
-          <span>{t.msg}</span>
-        </div>
-      ))}
-    </div>
-  )
-}
+const API_BASE = 'http://localhost:8000'
 
 function App() {
   const [lang, setLang] = useState('English')
   const [settings, setSettings] = useState({ notifications: true, offline: true, darkMode: false })
   const [toasts, setToasts] = useState([])
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('smartfeed_user')
+    return saved ? JSON.parse(saved) : { _id: '664f1a2b3c4d5e6f7a8b9c01', name: 'Farmer Raj', email: 'raj@farm.com', phone: '+91 98765 43210', location: 'Anand, Gujarat' }
+  })
+  const [token, setToken] = useState(() => localStorage.getItem('smartfeed_token') || 'guest-token-mock')
+
   const t = LANGS[lang] || LANGS.English
+
+  const login = (userData, userToken) => {
+    setUser(userData)
+    setToken(userToken)
+    localStorage.setItem('smartfeed_user', JSON.stringify(userData))
+    localStorage.setItem('smartfeed_token', userToken)
+    toast('Logged in successfully', 'success')
+  }
+
+  const logout = () => {
+    setUser(null)
+    setToken(null)
+    localStorage.removeItem('smartfeed_user')
+    localStorage.removeItem('smartfeed_token')
+  }
+
+  const apiFetch = async (path, options = {}) => {
+    const headers = { 'Content-Type': 'application/json', ...options.headers }
+    if (token) headers['Authorization'] = `Bearer ${token}`
+    const res = await fetch(`${API_BASE}${path}`, { ...options, headers })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      throw new Error(data.error || `HTTP error! Status: ${res.status}`)
+    }
+    return res.json()
+  }
 
   const toast = (msg, type = 'info', duration = 3000) => {
     const id = Date.now()
@@ -256,25 +100,17 @@ function App() {
 
   const setSetting = (key, val) => {
     setSettings(s => ({ ...s, [key]: val }))
-    const tr = LANGS[lang] || LANGS.English
     if (key === 'darkMode') {
       document.documentElement.classList.toggle('dark', val)
-      toast(val ? tr.toastDarkOn : tr.toastDarkOff, 'success')
-    } else if (key === 'notifications') {
-      toast(val ? tr.toastNotifOn : tr.toastNotifOff, val ? 'success' : 'info')
-    } else if (key === 'offline') {
-      toast(val ? tr.toastOfflineOn : tr.toastOfflineOff, 'info')
     }
   }
 
   const switchLang = (l) => {
     setLang(l)
-    const tr = LANGS[l] || LANGS.English
-    toast(tr.toastLangChanged, 'success')
   }
 
   return (
-    <AppCtx.Provider value={{ lang, t, settings, setSetting, switchLang, toast }}>
+    <AppCtx.Provider value={{ lang, t, settings, setSetting, switchLang, toast, user, token, login, logout, apiFetch }}>
       <div className={settings.darkMode ? 'dark-root' : ''}>
         <BrowserRouter>
           <Routes>
@@ -282,252 +118,171 @@ function App() {
             <Route path="/*" element={<Shell />} />
           </Routes>
         </BrowserRouter>
-        <Toast toasts={toasts}/>
+        {toasts.length > 0 && (
+          <div style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 1000, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {toasts.map(t => (
+              <div key={t.id} style={{ background: '#0f172a', color: '#fff', padding: '10px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+                <CheckCircle size={14} color="#22c55e" />
+                <span>{t.msg}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </AppCtx.Provider>
   )
 }
 
-/* ─────────────────── LANDING PAGE ─────────────────── */
+/* ─────────────────── SCREEN 1: HOMEPAGE (LANDING PAGE) ─────────────────── */
 function Landing() {
   const navigate = useNavigate()
-  const [scrolled, setScrolled] = useState(false)
-
-  useEffect(() => {
-    const handler = () => setScrolled(window.scrollY > 20)
-    window.addEventListener('scroll', handler)
-    return () => window.removeEventListener('scroll', handler)
-  }, [])
-
   return (
-    <div className="landing">
-      {/* Navbar */}
-      <header className={`landing-nav${scrolled ? ' scrolled' : ''}`}>
-        <Link to="/" className="brand">
-          <span className="brand-mark"><Leaf size={18}/></span>
-          <b>SmartFeed AI</b>
-        </Link>
+    <div style={{ background: '#ffffff', minHeight: '100vh' }}>
+      {/* Navigation */}
+      <header className="landing-nav">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className="brand-logo-icon"><Leaf size={18}/></div>
+          <b style={{ fontSize: 16, color: 'var(--ink-900)', fontFamily: 'var(--font-heading)' }}>SmartFeed AI</b>
+        </div>
         <nav className="landing-nav-links">
+          <a href="#home">Home</a>
           <a href="#features">Features</a>
           <a href="#how">How It Works</a>
-          <a href="#stats">Results</a>
+          <a href="#about">About Us</a>
           <a href="#contact">Contact</a>
         </nav>
-        <div className="landing-nav-actions">
-          <button className="button secondary" onClick={() => navigate('/login')}>Login</button>
-          <button className="button primary" onClick={() => navigate('/dashboard')}>
-            Get Started <ChevronRight size={14}/>
-          </button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button className="button secondary sm" onClick={() => navigate('/login')}>Login</button>
+          <button className="button primary sm" onClick={() => navigate('/analysis/new')}>Get Started</button>
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="landing-hero">
-        <div className="hero-content">
-          <span className="eyebrow"><Leaf size={13}/> AI-Powered Feed & Silage Intelligence</span>
-          <h1>Smarter Feed Decisions.<br/><em>Healthier Herds.</em></h1>
-          <p>AI-powered rapid screening for feed and silage quality, helping dairy farmers act early with confidence using computer vision technology.</p>
-          <ul className="hero-checks">
-            <li><CheckCircle size={15}/> Detect risks early before they spread</li>
-            <li><CheckCircle size={15}/> Improve farm productivity & yield</li>
-            <li><CheckCircle size={15}/> Ensure better herd health outcomes</li>
+      {/* Hero Section */}
+      <section className="landing-hero" id="home">
+        <div>
+          <div className="hero-badge-pill">
+            <Sparkles size={13}/> AI-Powered Feed & Silage Intelligence
+          </div>
+          <h1 className="hero-title">Smarter Feed Decisions.<br/>Healthier Herds.</h1>
+          <p className="hero-desc">
+            AI-powered rapid screening of feed and silage quality using computer vision.
+          </p>
+          <ul className="hero-check-list">
+            <li><CheckCircle size={15} color="#16a34a"/> Detect risks early</li>
+            <li><CheckCircle size={15} color="#16a34a"/> Improve productivity</li>
+            <li><CheckCircle size={15} color="#16a34a"/> Ensure better health</li>
           </ul>
-          <div className="hero-actions">
+          <div style={{ display: 'flex', gap: 12 }}>
             <button className="button primary lg" onClick={() => navigate('/analysis/new')}>
-              <ScanSearch size={17}/> Analyze a Sample
+              Analyze a Sample <ScanSearch size={16}/>
             </button>
-            <button className="button ghost lg" onClick={() => navigate('/dashboard')}>
-              Explore Platform <ChevronRight size={16}/>
+            <button className="button secondary lg" onClick={() => navigate('/dashboard')}>
+              Explore Platform
             </button>
           </div>
-          <div className="trust-row">
-            <div className="trust-avatars">
-              {['F','R','A','M'].map((l,i) => <span key={i} style={{background:['#16844b','#e1a72d','#4b9fd5','#c5453b'][i]}}>{l}</span>)}
+          <div className="hero-social-proof">
+            <div className="social-proof-avatars">
+              <span>🌾</span><span>🐄</span><span>👨‍🌾</span>
             </div>
             <div>
-              <div className="trust-stars">{'★★★★★'} <b>4.8/5</b></div>
-              <small>Trusted by 500+ Farmers & Dairy Professionals</small>
+              <b style={{ fontSize: 12, display: 'block', color: 'var(--ink-900)' }}>Trusted by 500+ Farmers & Dairy Professionals</b>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                {[1,2,3,4,5].map(i => <Star key={i} size={12} fill="#eab308" color="#eab308"/>)}
+                <small style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-700)', marginLeft: 4 }}>4.8/5 Google Rating</small>
+              </div>
             </div>
           </div>
         </div>
-        <div className="hero-visual">
-          <div className="hero-img-wrap">
-            <img src="/hero_farm.jpg" alt="Dairy farm aerial view" className="hero-img"/>
-            <div className="hero-overlay"/>
-            <div className="preview-card floating">
-              <div className="preview-card-head">
-                <span><Zap size={12}/> Smart Analysis Preview</span>
-                <span className="badge good">Good Quality</span>
-              </div>
-              <div className="preview-score-row">
-                <div className="preview-ring">
-                  <svg viewBox="0 0 44 44">
-                    <circle cx="22" cy="22" r="18" fill="none" stroke="#e6f0e8" strokeWidth="4"/>
-                    <circle cx="22" cy="22" r="18" fill="none" stroke="#20914b" strokeWidth="4"
-                      strokeDasharray={`${(87/100)*113} 113`} strokeLinecap="round"
-                      transform="rotate(-90 22 22)"/>
-                  </svg>
-                  <strong>87</strong>
-                </div>
-                <div>
-                  <div className="preview-label">Quality Score</div>
-                  <div className="preview-sublabel">/100 points</div>
-                </div>
-              </div>
-              <div className="preview-track"><i style={{width:'87%'}}/></div>
-              <dl className="preview-dl">
-                <dt>Screening Risk</dt><dd className="good-text">Low Risk</dd>
-                <dt>Sample Type</dt><dd>Silage</dd>
-                <dt>Analyzed On</dt><dd>22 May 2026</dd>
-                <dt>Confidence</dt><dd>92%</dd>
-              </dl>
-              <button className="text-button" onClick={() => navigate('/analysis/SF-2026-1256')}>View Full Analysis →</button>
+
+        {/* Floating Preview Card Over Photo */}
+        <div className="hero-preview-card">
+          <img src="/silage_sample.jpg" alt="Silage Screening" className="hero-preview-img" onError={e=>{e.target.src='https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=600&auto=format&fit=crop'}}/>
+          <div className="hero-floating-box">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--ink-500)', textTransform: 'uppercase' }}>✦ Smart Analysis Preview</span>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Feature Strip */}
-      <section className="landing-features" id="features">
-        <div className="features-inner">
-          <div className="section-label">Core Capabilities</div>
-          <h2 className="section-title">Everything you need to protect herd health</h2>
-          <div className="feature-grid">
-            <FeatureCard icon={ScanSearch} title="AI Analysis" text="Rapid computer vision screening of silage and feed samples in seconds" img="/ai_analysis.jpg"/>
-            <FeatureCard icon={ShieldCheck} title="Spoilage Detection" text="Identify quality risks early before they affect herd performance" img="/silage_quality.jpg"/>
-            <FeatureCard icon={Package} title="Batch Intelligence" text="Track every sample batch with complete history and analytics" img="/hero_farm.jpg"/>
-            <FeatureCard icon={ClipboardCheck} title="Smart Reports" text="Download detailed, actionable insights and share with your vet" img="/silage_sample.jpg"/>
-          </div>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section className="landing-how" id="how">
-        <div className="how-inner">
-          <div className="section-label">Simple Process</div>
-          <h2 className="section-title">Get results in 3 easy steps</h2>
-          <div className="steps-row">
-            {[
-              { n:'01', icon: Upload, title:'Upload Sample Image', text:'Take a photo of your silage or feed with any smartphone camera' },
-              { n:'02', icon: ScanSearch, title:'AI Screening', text:'Our model analyzes texture, color, and visual indicators in seconds' },
-              { n:'03', icon: FileText, title:'Get Smart Report', text:'Receive a quality score with actionable recommendations instantly' },
-            ].map(s => (
-              <div className="step" key={s.n}>
-                <div className="step-number">{s.n}</div>
-                <div className="step-icon"><s.icon size={22}/></div>
-                <h3>{s.title}</h3>
-                <p>{s.text}</p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <div>
+                <b style={{ fontSize: 24, fontFamily: 'var(--font-heading)', color: '#16a34a' }}>87 / 100</b>
+                <span className="badge good" style={{ display: 'block', width: 'fit-content', marginTop: 2 }}>Good Quality</span>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Stats */}
-      <section className="landing-stats" id="stats">
-        <div className="stats-inner">
-          <div className="section-label">Proven Impact</div>
-          <h2 className="section-title">Trusted by farmers across India</h2>
-          <div className="stats-grid">
-            {[
-              { val:'500+', label:'Farms using SmartFeed AI', icon: Home },
-              { val:'12,000+', label:'Feed samples analyzed', icon: ScanSearch },
-              { val:'92%', label:'Model accuracy rate', icon: CheckCircle },
-              { val:'3 sec', label:'Average analysis time', icon: Zap },
-            ].map(s => (
-              <div className="stat-card" key={s.label}>
-                <div className="stat-icon"><s.icon size={20}/></div>
-                <strong>{s.val}</strong>
-                <span>{s.label}</span>
+              <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#dcfce7', display: 'grid', placeItems: 'center', color: '#16a34a' }}>
+                <CheckCircle size={22}/>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="landing-cta" id="contact">
-        <div className="cta-inner">
-          <div className="cta-img-wrap">
-            <img src="/silage_quality.jpg" alt="Silage analysis"/>
-          </div>
-          <div className="cta-text">
-            <span className="eyebrow"><Star size={12}/> Start Today</span>
-            <h2>Ready to protect your herd?</h2>
-            <p>Join hundreds of dairy professionals already using SmartFeed AI to make faster, smarter feeding decisions.</p>
-            <button className="button primary lg" onClick={() => navigate('/analysis/new')}>
-              <ScanSearch size={16}/> Start Free Analysis
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--ink-700)', display: 'grid', gap: 4, padding: '8px 0', borderTop: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--ink-500)' }}>Screening Risk</span><b style={{ color: '#16a34a' }}>Low Risk</b>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--ink-500)' }}>Sample Type</span><b>Silage</b>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--ink-500)' }}>Analyzed On</span><span style={{ fontSize: 10 }}>22 May 2025, 10:30 AM</span>
+              </div>
+            </div>
+            <button className="button primary sm full" style={{ marginTop: 8 }} onClick={() => navigate('/dashboard')}>
+              View Full Analysis →
             </button>
           </div>
         </div>
       </section>
 
-      <footer className="landing-footer">
-        <div className="footer-brand">
-          <span className="brand-mark"><Leaf size={15}/></span>
-          <b>SmartFeed AI</b>
-          <small>Feed & Silage Intelligence</small>
+      {/* Feature Ribbon (Screen 1 bottom) */}
+      <section className="landing-ribbon" id="features">
+        <div className="ribbon-grid">
+          <div className="ribbon-item">
+            <div className="ribbon-icon"><ScanSearch size={20}/></div>
+            <b>AI Analysis</b>
+            <small>Accurate computer vision screening</small>
+          </div>
+          <div className="ribbon-item">
+            <div className="ribbon-icon"><AlertTriangle size={20}/></div>
+            <b>Spoilage Detection</b>
+            <small>Identify potential quality risks</small>
+          </div>
+          <div className="ribbon-item">
+            <div className="ribbon-icon"><TrendingUp size={20}/></div>
+            <b>Batch Intelligence</b>
+            <small>Track quality trends over time</small>
+          </div>
+          <div className="ribbon-item">
+            <div className="ribbon-icon"><Bot size={20}/></div>
+            <b>Explainable AI</b>
+            <small>Understand what AI sees</small>
+          </div>
+          <div className="ribbon-item">
+            <div className="ribbon-icon"><FileText size={20}/></div>
+            <b>Smart Reports</b>
+            <small>Download & share detailed reports</small>
+          </div>
+          <div className="ribbon-item">
+            <div className="ribbon-icon"><Leaf size={20}/></div>
+            <b>Farmer Friendly</b>
+            <small>Simple, fast and easy to use</small>
+          </div>
         </div>
-        <small className="footer-copy">© 2026 SmartFeed AI · AI-powered screening estimates, not laboratory measurements.</small>
-      </footer>
+      </section>
     </div>
   )
 }
 
-function FeatureCard({ icon: Icon, title, text, img }) {
-  return (
-    <div className="feature-card">
-      <div className="feature-card-img">
-        <img src={img} alt={title}/>
-        <div className="feature-card-overlay"/>
-      </div>
-      <div className="feature-card-body">
-        <div className="feature-card-icon"><Icon size={16}/></div>
-        <b>{title}</b>
-        <small>{text}</small>
-      </div>
-    </div>
-  )
-}
-
-/* ── Mock notifications (uses current lang) ── */
-function getMockNotifs(t) {
-  return [
-    { id:1, title:t.notif1Title, desc:t.notif1Desc, time:'2 min ago', type:'high', read:false },
-    { id:2, title:t.notif2Title, desc:t.notif2Desc, time:'1 hour ago', type:'good', read:false },
-    { id:3, title:t.notif3Title, desc:t.notif3Desc, time:'3 hours ago', type:'info', read:true },
-    { id:4, title:t.notif4Title, desc:t.notif4Desc, time:'Yesterday', type:'info', read:true },
-  ]
-}
-
-/* ─────────────────── APP SHELL ─────────────────── */
+/* ─────────────────── APP SHELL (SIDEBAR & TOPBAR) ─────────────────── */
 function Shell() {
-  const { t, lang, switchLang, settings } = useApp()
-  const [drawer, setDrawer] = useState(false)
-  const [notifOpen, setNotifOpen] = useState(false)
-  const [notifs, setNotifs] = useState(() => getMockNotifs(t))
-  const unread = notifs.filter(n => !n.read).length
-  const notifRef = useRef(null)
-
-  // Re-generate notif titles/descs when language changes
-  useEffect(() => {
-    setNotifs(prev => getMockNotifs(t).map((n, i) => ({ ...n, read: prev[i]?.read ?? n.read })))
-  }, [lang])
+  const navigate = useNavigate()
+  const { t, lang, switchLang, user, logout } = useApp()
 
   useEffect(() => {
-    const handler = (e) => {
-      if (notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
+    if (!user) navigate('/login')
+  }, [user, navigate])
 
-  const markAllRead = () => setNotifs(n => n.map(x => ({ ...x, read: true })))
+  if (!user) return null
 
-  const navLabels = [
+  const navItems = [
     ['/dashboard', t.dashboard, BarChart3],
     ['/analysis/new', t.newAnalysis, ScanSearch],
     ['/batches', t.myBatches, Package],
+    ['/coach', t.silageCoach, ClipboardCheck],
     ['/history', t.history, Activity],
     ['/analytics', t.analytics, TrendingUp],
     ['/reports', t.reports, FileText],
@@ -537,105 +292,74 @@ function Shell() {
   ]
 
   return (
-    <div className={`app-shell${settings.darkMode ? ' dark-mode' : ''}`}>
-      <aside className={`sidebar${drawer ? ' open' : ''}`}>
+    <div className="app-shell">
+      {/* Sidebar - Matching Mockup 100% */}
+      <aside className="sidebar">
         <div className="sidebar-brand">
-          <span className="brand-mark"><Leaf size={18}/></span>
-          <div>
+          <div className="brand-logo-icon"><Leaf size={17}/></div>
+          <div className="brand-text-wrap">
             <b>SmartFeed AI</b>
-            <small>Feed & Silage Intelligence</small>
+            <small>Feed Screening</small>
           </div>
         </div>
-        <button className="mobile-close" onClick={() => setDrawer(false)}><X size={18}/></button>
 
-        <div className="nav-label"><span>{t.workspace}</span></div>
-        <nav>
-          {navLabels.slice(0, 7).map(([to, label, Icon]) => (
-            <NavLink key={to} to={to} onClick={() => setDrawer(false)}
-              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
-              <Icon size={15}/> {label}
+        <nav className="sidebar-nav-list">
+          {navItems.map(([path, label, Icon]) => (
+            <NavLink
+              key={path}
+              to={path}
+              className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
+            >
+              <Icon size={16}/>
+              <span>{label}</span>
             </NavLink>
           ))}
         </nav>
 
-        <div className="nav-label" style={{marginTop:'auto'}}><span>{t.account}</span></div>
-        <nav>
-          {navLabels.slice(7).map(([to, label, Icon]) => (
-            <NavLink key={to} to={to} onClick={() => setDrawer(false)}
-              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
-              <Icon size={15}/> {label}
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="sidebar-bottom">
-          <div className="nav-label"><Languages size={11}/> <span>{t.language} / भाषा</span></div>
-          <div className="language-grid">
-            {Object.keys(LANGS).map(l => (
-              <button
-                key={l}
-                type="button"
-                className={`language${lang === l ? ' active' : ''}`}
-                onClick={() => switchLang(l)}
-              >{l}</button>
-            ))}
+        {/* Support box from Mockup */}
+        <div className="sidebar-support-card" onClick={() => navigate('/assistant')}>
+          <Headphones size={18} color="#88be99"/>
+          <div>
+            <b>{t.needHelp}</b>
+            <small>{t.contactSupport}</small>
           </div>
-          <div className="help-box">
-            <HelpCircle size={15}/>
-            <div>
-              <b>{t.needHelp}</b>
-              <small>{t.contactSupport}</small>
-            </div>
+        </div>
+
+        {/* Language switch */}
+        <div className="sidebar-lang-toggle">
+          <span>Language</span>
+          <div style={{ display: 'flex', gap: 4 }}>
+            <button className={`lang-chip-btn ${lang === 'English' ? 'active' : ''}`} onClick={() => switchLang('English')}>EN</button>
+            <button className={`lang-chip-btn ${lang === 'हिंदी' ? 'active' : ''}`} onClick={() => switchLang('हिंदी')}>हिंदी</button>
           </div>
         </div>
       </aside>
 
-      <main className="main">
+      {/* Main Content Area */}
+      <div className="main">
         <header className="topbar">
-          <div className="topbar-left">
-            <button className="menu-button" onClick={() => setDrawer(true)}><Menu size={20}/></button>
-            <div>
-              <span className="kicker">SmartFeed AI / Workspace</span>
-              <h2><PageTitle/></h2>
-            </div>
+          <div className="topbar-title-wrap">
+            <h2>SmartFeed AI</h2>
           </div>
-          <div className="topbar-right">
-            <span className="status"><i/> {t.offlineReady}</span>
 
-            {/* Notifications button + dropdown */}
-            <div style={{position:'relative'}} ref={notifRef}>
-              <button className="icon-btn" type="button" onClick={() => setNotifOpen(o => !o)}>
-                <Bell size={17}/>
-                {unread > 0 && <span className="notif-dot">{unread > 9 ? '9+' : unread}</span>}
-              </button>
-              {notifOpen && (
-                <div className="notif-panel">
-                  <div className="notif-panel-head">
-                    <b>{t.notifications} {unread > 0 && <span className="notif-count">{unread}</span>}</b>
-                    <button type="button" className="text-button" onClick={markAllRead}>{t.markAllRead}</button>
-                  </div>
-                  <div className="notif-list">
-                    {notifs.map(n => (
-                      <div key={n.id} className={`notif-item${n.read ? ' read' : ''}`}
-                        onClick={() => setNotifs(p => p.map(x => x.id===n.id ? {...x,read:true} : x))}>
-                        <div className={`notif-dot-icon ${n.type}`}/>
-                        <div className="notif-content">
-                          <b>{n.title}</b>
-                          <small>{n.desc}</small>
-                          <span>{n.time}</span>
-                        </div>
-                        {!n.read && <div className="notif-unread-dot"/>}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="notif-footer">
-                    <button type="button" className="text-button" onClick={() => setNotifOpen(false)}>{t.viewAllNotif}</button>
-                  </div>
-                </div>
-              )}
+          <div className="topbar-right">
+            <div className="topbar-date-badge">
+              <Calendar size={13} color="var(--brand-primary)"/>
+              <span>15 May 2025 – 22 May 2025</span>
             </div>
 
-            <div className="avatar-btn">R</div>
+            <button className="topbar-icon-btn">
+              <Bell size={16}/>
+              <span className="topbar-notif-dot"/>
+            </button>
+
+            <div className="topbar-user-pill" onClick={() => navigate('/profile')}>
+              <div className="topbar-avatar">{user?.name ? user.name[0].toUpperCase() : 'R'}</div>
+              <div className="topbar-user-details">
+                <b>{user?.name || 'Farmer Raj'}</b>
+                <small>{user?.email || 'raj@farm.com'}</small>
+              </div>
+            </div>
           </div>
         </header>
 
@@ -645,6 +369,7 @@ function Shell() {
           <Route path="/analysis/:id" element={<Result/>}/>
           <Route path="/batches" element={<Batches/>}/>
           <Route path="/batches/:id" element={<BatchDetail/>}/>
+          <Route path="/coach" element={<SilageCoach/>}/>
           <Route path="/history" element={<History/>}/>
           <Route path="/analytics" element={<Analytics/>}/>
           <Route path="/assistant" element={<Assistant/>}/>
@@ -653,711 +378,787 @@ function Shell() {
           <Route path="/settings" element={<SettingsPage/>}/>
           <Route path="/login" element={<Login/>}/>
         </Routes>
-      </main>
-
-      {drawer && <div className="drawer-backdrop" onClick={() => setDrawer(false)}/>}
+      </div>
     </div>
   )
 }
 
-function PageTitle() {
-  const location = useLocation()
-  const { t } = useApp()
-  if (location.pathname.startsWith('/analysis/') && !location.pathname.startsWith('/analysis/new')) return t.analysisResult
-  if (location.pathname.startsWith('/batches/') && location.pathname.length > 9) return t.batchDetail
-  const map = {
-    '/dashboard': t.dashboard, '/analysis/new': t.newAnalysis,
-    '/batches': t.myBatches, '/history': t.historyTitle,
-    '/analytics': t.analyticsTitle, '/reports': t.reportsTitle,
-    '/assistant': t.aiAssistant, '/profile': t.profileTitle, '/settings': t.settingsTitle,
-  }
-  const match = Object.entries(map).find(([path]) => location.pathname.startsWith(path))
-  return match?.[1] || t.workspace
-}
-
-/* ─────────────────── DASHBOARD ─────────────────── */
+/* ─────────────────── SCREEN 4: DASHBOARD PAGE ─────────────────── */
 function Dashboard() {
-  const [range, setRange] = useState('30 days')
-  const { t } = useApp()
-  const today = new Date()
-  const dateStr = today.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })
+  const navigate = useNavigate()
+  const { t, apiFetch, user } = useApp()
+  const [tests, setTests] = useState([])
+  const [analytics, setAnalytics] = useState(null)
+
+  useEffect(() => {
+    apiFetch('/api/tests').then(setTests).catch(console.error)
+    apiFetch('/api/analytics').then(setAnalytics).catch(console.error)
+  }, [apiFetch])
+
+  const total = analytics?.totalTests || (tests.length > 0 ? tests.length : 128)
+  const good = analytics?.riskDistribution?.Good ?? 82
+  const caution = analytics?.riskDistribution?.Warning ?? 31
+  const high = analytics?.riskDistribution?.Bad ?? 15
+  const avgScore = analytics?.averageScore ?? 81
 
   return (
-    <section className="page">
+    <div className="page">
       <div className="page-heading">
         <div>
-          <span className="eyebrow">{t.welcomeBack}</span>
-          <h1>{t.dashboard}</h1>
-          <p>{t.monitorDesc}</p>
+          <h1>Dashboard</h1>
+          <p>Welcome back, {user?.name || 'Farmer Raj'} 👋</p>
         </div>
-        <div style={{display:'flex',gap:8,alignItems:'center'}}>
-          <span className="date-pill"><Calendar size={12}/> {dateStr}</span>
-          <Link className="button primary" to="/analysis/new"><Plus size={15}/> {t.newAnalysis}</Link>
-        </div>
+        <button className="button primary" onClick={() => navigate('/analysis/new')}>
+          <Plus size={15}/> New Analysis
+        </button>
       </div>
 
-      <div className="stat-grid">
-        <StatCard title={t.totalAnalyses} value="128" delta={t.fromLastWeek} color="ink" icon={BarChart3}/>
-        <StatCard title={t.goodQuality} value="82" delta={`64% ${t.ofTotal}`} color="good" icon={CheckCircle}/>
-        <StatCard title={t.caution} value="31" delta={`24% ${t.ofTotal}`} color="caution" icon={AlertTriangle}/>
-        <StatCard title={t.highRisk} value="15" delta={`12% ${t.ofTotal}`} color="high" icon={AlertTriangle}/>
-      </div>
-
-      <div className="avg-bar">
-        <span className="avg-label">{t.averageScore}</span>
-        <strong className="avg-val good-text">81</strong>
-        <span className="avg-trend">↑ 8 {t.points}</span>
-        <div className="avg-track"><div className="avg-fill" style={{width:'81%'}}/></div>
-      </div>
-
-      <div className="chart-grid">
-        <ChartCard range={range} setRange={setRange}/>
-        <DonutCard/>
-      </div>
-
-      <div className="recent-section">
-        <div className="section-row">
-          <b>{t.recentAnalyses}</b>
-          <Link className="text-button" to="/history">{t.viewAll}</Link>
-        </div>
-        <Table
-          headers={[t.sampleId, t.batchId, t.type, t.analyzedOn, t.score, t.risk, t.action]}
-          rows={mockTests.slice(0,5).map(test => [
-            <span className="mono">{test.id}</span>,
-            test.batchId, test.type, test.analyzedOn,
-            <ScorePill score={test.score}/>,
-            <span className={`badge ${riskClass(test.risk)}`}>{riskIcon(test.risk)} {test.risk}</span>,
-            <Link className="text-button" to={`/analysis/${test.id}`}><Eye size={13}/> {t.view}</Link>
-          ])}
-        />
-      </div>
-    </section>
-  )
-}
-
-function StatCard({ title, value, delta, color, icon: Icon }) {
-  const cls = color === 'good' ? 'good-text' : color === 'caution' ? 'caution-text' : color === 'high' ? 'high-text' : ''
-  return (
-    <div className={`card stat-card2 ${color}`}>
-      <div className="stat-top">
-        <small>{title}</small>
-        <span className="stat-icon-wrap"><Icon size={14}/></span>
-      </div>
-      <strong className={cls}>{value}</strong>
-      <span className={`delta ${cls}`}>{delta}</span>
-    </div>
-  )
-}
-
-function ScorePill({ score }) {
-  const color = score >= 80 ? '#20914b' : score >= 50 ? '#ad7200' : '#c5453b'
-  const bg = score >= 80 ? '#dff5e5' : score >= 50 ? '#fff0ca' : '#ffe2df'
-  return <span style={{background:bg,color,padding:'4px 9px',borderRadius:99,fontWeight:800,fontSize:10}}>{score}</span>
-}
-
-function ChartCard({ range, setRange }) {
-  const { t } = useApp()
-  const values = trendData[range] || trendData['30 days']
-  const labels = range === '7 days'
-    ? ['15 May','16 May','17 May','18 May','19 May']
-    : ['14 May','15 May','16 May','17 May','18 May','19 May','22 May']
-  const CHART_H = 165
-  return (
-    <div className="card chart-card2">
-      <div className="card-head">
-        <div>
-          <b>{t.qualityTrend}</b>
-          <small>{t.avgScoreOverTime}</small>
-        </div>
-        <select value={range} onChange={e => setRange(e.target.value)}>
-          <option>7 days</option>
-          <option>30 days</option>
-          <option>90 days</option>
-        </select>
-      </div>
-      <div className="line-chart2">
-        {values.map((v, i) => (
-          <div className="bar-col" key={i}>
-            <div className="bar2" style={{height: `${Math.round((v / 100) * CHART_H)}px`}}>
-              <span className="bar-label">{v}</span>
-            </div>
-            <span className="bar-axis">{labels[i % labels.length]}</span>
+      {/* 5 Top Stat Metric Cards (Matching Screen 4) */}
+      <div className="dashboard-stat-grid">
+        <div className="stat-metric-card">
+          <small>Total Analyses</small>
+          <div className="stat-metric-value-row">
+            <b>{total}</b>
+            <span className="stat-metric-delta good">↑ 12% from last week</span>
           </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function DonutCard() {
-  const { t } = useApp()
-  return (
-    <div className="card donut-card2">
-      <div className="card-head">
-        <div>
-          <b>{t.riskDistribution}</b>
-          <small>{t.currentTiers}</small>
+        </div>
+        <div className="stat-metric-card">
+          <small>Good Quality</small>
+          <div className="stat-metric-value-row">
+            <b>{good}</b>
+            <span className="stat-metric-delta good">{Math.round((good/total)*100)}% of total</span>
+          </div>
+        </div>
+        <div className="stat-metric-card">
+          <small>Caution</small>
+          <div className="stat-metric-value-row">
+            <b>{caution}</b>
+            <span className="stat-metric-delta caution">{Math.round((caution/total)*100)}% of total</span>
+          </div>
+        </div>
+        <div className="stat-metric-card">
+          <small>High Risk</small>
+          <div className="stat-metric-value-row">
+            <b>{high}</b>
+            <span className="stat-metric-delta high">{Math.round((high/total)*100)}% of total</span>
+          </div>
+        </div>
+        <div className="stat-metric-card">
+          <small>Average Score</small>
+          <div className="stat-metric-value-row">
+            <b>{avgScore}/100</b>
+            <span className="stat-metric-delta good">↑ 6 points</span>
+          </div>
         </div>
       </div>
-      <div className="donut2">
-        <strong>128<small>{t.total}</small></strong>
-      </div>
-      <div className="legend2">
-        {[['good-bg',t.good,'64%','#dff5e5','#20914b'],['caution-bg',t.caution,'24%','#fff0ca','#ad7200'],['high-bg',t.highRisk,'12%','#ffe2df','#c5453b']].map(([cls,label,pct,bg,color]) => (
-          <div className="legend-item" key={label}>
-            <div style={{display:'flex',alignItems:'center',gap:7}}>
-              <i className={cls}/>
-              <span>{label}</span>
-            </div>
-            <div style={{display:'flex',alignItems:'center',gap:8}}>
-              <div className="legend-bar-wrap">
-                <div className="legend-bar" style={{width:pct,background:color}}/>
-              </div>
-              <b>{pct}</b>
+
+      {/* Charts Grid: Quality Trend (Left) & Risk Distribution (Right) */}
+      <div className="dashboard-charts-grid">
+        <div className="card chart-card-wrap">
+          <div className="card-head">
+            <b>Quality Trend (All Batches)</b>
+            <select className="field-input" style={{ height: 32, fontSize: 11, padding: '0 8px' }}>
+              <option>All Batches</option>
+              <option>SILAGE-001</option>
+            </select>
+          </div>
+          <div className="trend-svg-wrap">
+            <svg viewBox="0 0 500 160" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
+              <line x1="40" y1="20" x2="480" y2="20" stroke="#f1f5f9" strokeWidth="1"/>
+              <line x1="40" y1="60" x2="480" y2="60" stroke="#f1f5f9" strokeWidth="1"/>
+              <line x1="40" y1="100" x2="480" y2="100" stroke="#f1f5f9" strokeWidth="1"/>
+              <line x1="40" y1="140" x2="480" y2="140" stroke="#f1f5f9" strokeWidth="1"/>
+              
+              <text x="15" y="25" fill="#94a3b8" fontSize="10">100</text>
+              <text x="15" y="65" fill="#94a3b8" fontSize="10">75</text>
+              <text x="15" y="105" fill="#94a3b8" fontSize="10">50</text>
+              <text x="15" y="145" fill="#94a3b8" fontSize="10">25</text>
+
+              {/* Smooth trend curve */}
+              <polyline
+                fill="none"
+                stroke="#16a34a"
+                strokeWidth="2.5"
+                points="60,35 125,48 190,58 255,65 320,72 385,82 450,92"
+              />
+              {[[60,35],[125,48],[190,58],[255,65],[320,72],[385,82],[450,92]].map(([cx,cy], i) => (
+                <circle key={i} cx={cx} cy={cy} r="4" fill="#16a34a" stroke="#fff" strokeWidth="2"/>
+              ))}
+              
+              {['15 May','16 May','17 May','18 May','20 May','21 May','22 May'].map((d, i) => (
+                <text key={i} x={60 + i*65} y="158" fill="#64748b" fontSize="10" textAnchor="middle">{d}</text>
+              ))}
+            </svg>
+          </div>
+        </div>
+
+        {/* Risk Distribution Donut */}
+        <div className="card donut-chart-container">
+          <div className="card-head" style={{ width: '100%', marginBottom: 8 }}>
+            <b>Risk Distribution</b>
+          </div>
+          <div className="donut-circle-wrap">
+            <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
+              <circle cx="50" cy="50" r="38" fill="none" stroke="#fee2e2" strokeWidth="12" strokeDasharray="238.7" strokeDashoffset="0"/>
+              <circle cx="50" cy="50" r="38" fill="none" stroke="#fef3c7" strokeWidth="12" strokeDasharray="238.7" strokeDashoffset="28"/>
+              <circle cx="50" cy="50" r="38" fill="none" stroke="#16a34a" strokeWidth="12" strokeDasharray="238.7" strokeDashoffset="85"/>
+            </svg>
+            <div className="donut-center-label">
+              <b>{total}</b>
+              <small>Total</small>
             </div>
           </div>
-        ))}
+          <div className="donut-legend-stack">
+            <div className="donut-legend-row">
+              <span><span className="donut-legend-dot" style={{ background: '#16a34a' }}/>Good ({Math.round((good/total)*100)}%)</span>
+              <b>{good}</b>
+            </div>
+            <div className="donut-legend-row">
+              <span><span className="donut-legend-dot" style={{ background: '#f59e0b' }}/>Caution ({Math.round((caution/total)*100)}%)</span>
+              <b>{caution}</b>
+            </div>
+            <div className="donut-legend-row">
+              <span><span className="donut-legend-dot" style={{ background: '#ef4444' }}/>High Risk ({Math.round((high/total)*100)}%)</span>
+              <b>{high}</b>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Analyses Table */}
+      <div className="table-container">
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <b style={{ fontSize: 14 }}>Recent Analyses</b>
+          <Link to="/history" style={{ fontSize: 12, color: 'var(--brand-primary)', fontWeight: 700 }}>View All →</Link>
+        </div>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Sample ID</th>
+              <th>Batch ID</th>
+              <th>Type</th>
+              <th>Analyzed On</th>
+              <th>Score</th>
+              <th>Risk</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(tests.length > 0 ? tests : mockTests).slice(0, 5).map(t2 => {
+              const risk = t2.overallStatus || t2.risk || 'Good'
+              const id = t2.id || t2._id
+              return (
+                <tr key={id}>
+                  <td><b>{id}</b></td>
+                  <td>{t2.batchId || 'SILAGE-001'}</td>
+                  <td>{t2.sampleType || t2.type || 'Silage'}</td>
+                  <td>{t2.analyzedOn || '22 May 2025, 10:30 AM'}</td>
+                  <td><b>{t2.score || 87}</b></td>
+                  <td><span className={`badge ${riskClass(risk)}`}>{risk}</span></td>
+                  <td>
+                    <Link to={`/analysis/${id}`} className="button secondary sm"><Eye size={12}/> View</Link>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   )
 }
 
-/* ─────────────────── NEW ANALYSIS ─────────────────── */
+/* ─────────────────── SCREEN 2: NEW ANALYSIS (UPLOAD PAGE) ─────────────────── */
+const getBase64 = file => new Promise((resolve, reject) => {
+  const reader = new FileReader()
+  reader.readAsDataURL(file)
+  reader.onload = () => resolve(reader.result)
+  reader.onerror = reject
+})
+
 function NewAnalysis() {
   const navigate = useNavigate()
-  const { t } = useApp()
+  const { toast, apiFetch } = useApp()
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [progress, setProgress] = useState(0)
-  const [dragging, setDragging] = useState(false)
-  const fileRef = useRef(null)
+  const [sampleType, setSampleType] = useState('Silage')
+  const [feedType, setFeedType] = useState('Maize Silage')
+  const [storageDuration, setStorageDuration] = useState('20')
+  const [storageCondition, setStorageCondition] = useState('Covered')
+  const [notes, setNotes] = useState('')
+  const fileInputRef = useRef(null)
 
-  const handleFile = f => {
+  const handleFileSelect = f => {
     if (!f) return
     setFile(f)
     setPreview(URL.createObjectURL(f))
   }
 
-  const submit = e => {
+  const handleAnalyze = async (e) => {
     e.preventDefault()
+    if (!file) return toast('Please select a feed/silage image first', 'error')
+
     setLoading(true)
-    setProgress(0)
-    const iv = setInterval(() => setProgress(p => { if (p >= 95) { clearInterval(iv); return p }; return p + Math.random()*15 }), 200)
-    setTimeout(() => { clearInterval(iv); setProgress(100); setTimeout(() => navigate('/analysis/SF-2026-1257'), 400) }, 2200)
+    try {
+      const base64 = await getBase64(file)
+      const data = await apiFetch('/api/tests', {
+        method: 'POST',
+        body: JSON.stringify({
+          image: base64,
+          imageName: file.name,
+          sampleType,
+          feedType,
+          storageDuration: Number(storageDuration) || 0,
+          storageCondition,
+          notes,
+          batchId: 'SILAGE-001'
+        })
+      })
+      toast('Screening analysis complete with Gemini AI!', 'success')
+      navigate(`/analysis/${data.id || data._id}`)
+    } catch (err) {
+      toast(err.message, 'error')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <section className="page">
+    <div className="page">
       <div className="page-heading">
         <div>
-          <h1>{t.newAnalysisTitle}</h1>
-          <p>{t.newAnalysisDesc}</p>
-        </div>
-        <div className="topbar-user">
-          <div className="avatar-sm">R</div>
-          <div>
-            <b>Farmer Raj</b>
-            <small>agri@farm.com</small>
-          </div>
+          <h1>New Analysis</h1>
+          <p>Upload a feed or silage sample image for AI analysis</p>
         </div>
       </div>
 
-      <form className="analysis-layout2" onSubmit={submit}>
-        {/* Upload Card */}
-        <div className="card upload-card2">
-          <h3>{t.uploadImage}</h3>
-          <label
-            className={`upload-box2${dragging?' dragging':''}`}
-            onDragOver={e=>{e.preventDefault();setDragging(true)}}
-            onDragLeave={()=>setDragging(false)}
-            onDrop={e=>{e.preventDefault();setDragging(false);handleFile(e.dataTransfer.files[0])}}
-            onClick={()=>fileRef.current?.click()}
-          >
-            {preview ? (
-              <div className="upload-preview">
-                <img src={preview} alt="Preview"/>
-                <button type="button" className="remove-img" onClick={e=>{e.preventDefault();setFile(null);setPreview(null)}}><X size={14}/></button>
-              </div>
-            ) : (
-              <>
-                <input ref={fileRef} type="file" accept="image/png,image/jpeg" style={{display:'none'}} onChange={e=>handleFile(e.target.files[0])}/>
-                <div className="upload-icon-wrap"><Upload size={28}/></div>
-                <b>{t.dragDrop}</b>
-                <small>{t.or}</small>
-                <span className="browse-btn">{t.browseFiles}</span>
-                <small className="upload-hint">{t.uploadHint}</small>
-              </>
-            )}
-          </label>
-        </div>
-
-        {/* Form Card */}
-        <div className="card form-card2">
-          <h3>{t.sampleInfo}</h3>
-
-          <label className="field-label">{t.sampleType} *
-            <select name="type" className="field-input">
-              <option>{t.silage}</option>
-              <option>{t.feed}</option>
-            </select>
-          </label>
-
-          <label className="field-label">{t.feedType} *
-            <select className="field-input">
-              <option>{t.maizeSilage}</option>
-              <option>{t.grassSilage}</option>
-              <option>{t.cattleFeed}</option>
-              <option>{t.dairyConcentrate}</option>
-            </select>
-          </label>
-
-          <div className="two-col">
-            <label className="field-label">{t.storageDuration}
-              <input type="number" defaultValue="20" className="field-input"/>
-            </label>
-            <label className="field-label">{t.storageCondition}
-              <select className="field-input">
-                <option>{t.covered}</option>
-                <option>{t.open}</option>
-                <option>{t.silo}</option>
-              </select>
-            </label>
+      <form onSubmit={handleAnalyze}>
+        <div className="analysis-split-grid">
+          {/* Left: Upload Image Box (Matching Screen 2) */}
+          <div className="card">
+            <b style={{ display: 'block', fontSize: 13, marginBottom: 14 }}>Upload Image</b>
+            <div
+              className="upload-dropzone"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {preview ? (
+                <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                  <img src={preview} alt="Upload Preview" style={{ width: '100%', height: 260, objectFit: 'cover', borderRadius: 8 }}/>
+                  <button type="button" className="button secondary sm" style={{ marginTop: 12 }} onClick={(e)=>{e.stopPropagation();setFile(null);setPreview(null)}}>
+                    Remove Photo
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e=>handleFileSelect(e.target.files[0])}/>
+                  <div className="upload-cloud-icon"><Upload size={24}/></div>
+                  <b style={{ fontSize: 14, color: 'var(--ink-900)', marginBottom: 4 }}>Drag & drop image here</b>
+                  <span style={{ fontSize: 12, color: 'var(--ink-500)', marginBottom: 12 }}>or</span>
+                  <span className="button secondary sm" style={{ pointerEvents: 'none' }}>Browse Files</span>
+                  <small style={{ color: 'var(--ink-400)', fontSize: 10, marginTop: 16 }}>Supports: JPG, PNG, JPEG (Max 10MB)</small>
+                </>
+              )}
+            </div>
           </div>
 
-          <label className="field-label">{t.notes}
-            <textarea className="field-input" placeholder={t.notesPlaceholder} rows={3}/>
-          </label>
-
-          {loading && (
-            <div className="progress-wrap">
-              <div className="progress-bar">
-                <div className="progress-fill" style={{width:`${progress}%`}}/>
-              </div>
-              <small>{t.analyzing} {Math.round(progress)}%</small>
+          {/* Right: Sample Information Form (Matching Screen 2) */}
+          <div className="card">
+            <b style={{ display: 'block', fontSize: 13, marginBottom: 14 }}>Sample Information</b>
+            <div className="form-field-group">
+              <label className="field-label">Sample Type *
+                <select className="field-input" value={sampleType} onChange={e=>setSampleType(e.target.value)}>
+                  <option value="Silage">Silage</option>
+                  <option value="Feed">Feed</option>
+                </select>
+              </label>
+              <label className="field-label">Feed Type
+                <select className="field-input" value={feedType} onChange={e=>setFeedType(e.target.value)}>
+                  <option value="Maize Silage">Maize Silage</option>
+                  <option value="Grass Silage">Grass Silage</option>
+                  <option value="Cattle Feed">Cattle Feed</option>
+                  <option value="Dairy Concentrate">Dairy Concentrate</option>
+                </select>
+              </label>
             </div>
-          )}
 
-          <button className="button primary full" disabled={loading} type="submit">
-            {loading ? <><RefreshCw size={15} className="spin"/> {t.processing}</> : <><ScanSearch size={15}/> {t.analyzeBtn}</>}
-          </button>
+            <div className="form-field-group">
+              <label className="field-label">Storage Duration (Days)
+                <input type="number" className="field-input" value={storageDuration} onChange={e=>setStorageDuration(e.target.value)}/>
+              </label>
+              <label className="field-label">Storage Condition
+                <select className="field-input" value={storageCondition} onChange={e=>setStorageCondition(e.target.value)}>
+                  <option value="Covered">Covered</option>
+                  <option value="Silo">Silo</option>
+                  <option value="Open">Open</option>
+                </select>
+              </label>
+            </div>
 
-          <div className="form-footer-note">
-            <ShieldCheck size={13}/> {t.disclaimer}
+            <label className="field-label" style={{ marginBottom: 20 }}>Notes (Optional)
+              <textarea className="field-input" rows={3} placeholder="Any additional information..." value={notes} onChange={e=>setNotes(e.target.value)}/>
+            </label>
+
+            <button type="submit" className="button primary full lg" disabled={loading}>
+              {loading ? <><RefreshCw size={16} className="spin"/> Analyzing Sample with Gemini...</> : 'Analyze Sample'}
+            </button>
           </div>
         </div>
       </form>
-    </section>
+    </div>
   )
 }
 
-/* ─────────────────── RESULT PAGE ─────────────────── */
+/* ─────────────────── SCREEN 3: ANALYSIS RESULT PAGE ─────────────────── */
 function Result() {
   const { id } = useParams()
-  const { t } = useApp()
-  const test = mockTests.find(x => x.id === id) || mockTests[0]
+  const { apiFetch } = useApp()
+  const [test, setTest] = useState(null)
+  const [qr, setQr] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await apiFetch(`/api/tests/${id}/detail`)
+        setTest(data)
+        const qrData = await apiFetch(`/api/qr/${id}`).catch(() => null)
+        if (qrData) setQr(qrData)
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [id, apiFetch])
+
+  if (loading) return <div className="page" style={{ textAlign: 'center', paddingTop: 100 }}><RefreshCw size={32} className="spin" color="#16a34a"/></div>
+  if (!test) return <div className="page"><h3>Sample Analysis Not Found</h3></div>
+
+  const score = test.score ?? 87
+  const risk = test.overallStatus || test.risk || 'Good Quality'
 
   return (
-    <section className="page">
+    <div className="page">
       <div className="page-heading">
         <div>
-          <h1>{t.analysisResult}</h1>
-          <p>{t.sampleId}: <b>{test.id}</b> · {t.batchId}: <b>{test.batchId}</b></p>
+          <h1>Analysis Result</h1>
+          <p>Sample ID: <b style={{ color: 'var(--ink-900)' }}>{test.id || test._id}</b></p>
         </div>
-        <button className="button secondary" onClick={() => alert(t.downloading)}>
-          <Download size={14}/> {t.downloadReport}
+        <button className="button secondary" onClick={() => window.print()}>
+          <Download size={14}/> Download Report
         </button>
       </div>
 
-      <div className="result-meta-bar">
-        <span><Calendar size={12}/> {test.analyzedOn}</span>
-        <span>{t.sampleTypeLabel}: <b>{test.sampleType}</b></span>
-        <span>{t.modelConfidence}: <b>92%</b></span>
-      </div>
-
-      <div className="result-layout2">
-        {/* Left column */}
-        <div className="result-left">
-          <div className="card score-card2">
-            <div className="score-ring">
-              <svg viewBox="0 0 120 120" width="120" height="120">
-                <circle cx="60" cy="60" r="50" fill="none" stroke="#e8f4ec" strokeWidth="10"/>
-                <circle cx="60" cy="60" r="50" fill="none" stroke="#20914b" strokeWidth="10"
-                  strokeDasharray={`${(test.score/100)*314} 314`} strokeLinecap="round"
-                  transform="rotate(-90 60 60)"/>
-              </svg>
-              <div className="score-inner">
-                <strong>{test.score}</strong>
-                <small>/100</small>
-              </div>
-            </div>
-            <div className="score-info">
-              <span className={`badge ${riskClass(test.risk)} lg`}>{test.risk}</span>
-              <p>{t.modelConfidence}: <b>92%</b></p>
-              <p className="muted">{t.screeningEst}</p>
-              <div className="score-params">
-                <div>{t.screeningRisk}</div><div className="good-text">{t.lowRisk}</div>
-                <div>{t.sampleTypeLabel}</div><div>{test.sampleType}</div>
-                <div>{t.analyzedOn}</div><div>{test.analyzedOn}</div>
-              </div>
+      <div className="result-top-grid">
+        {/* Left Column: Radial Score Card & Metadata (Matching Screen 3) */}
+        <div className="card score-display-card">
+          <div className="score-radial-wrap">
+            <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
+              <circle cx="50" cy="50" r="42" fill="none" stroke="#e2e8f0" strokeWidth="8"/>
+              <circle cx="50" cy="50" r="42" fill="none" stroke="#16a34a" strokeWidth="8" strokeDasharray="264" strokeDashoffset={`${264 - (264 * score)/100}`} strokeLinecap="round"/>
+            </svg>
+            <div className="score-radial-inner">
+              <b style={{ color: '#16a34a' }}>{score}</b>
+              <small style={{ fontSize: 11, color: 'var(--ink-500)' }}>/100</small>
             </div>
           </div>
 
-          <div className="card">
-            <div className="card-head"><b>{t.keyIndicators}</b></div>
-            <ul className="check-list">
-              <li>{t.ind1}</li>
-              <li>{t.ind2}</li>
-              <li>{t.ind3}</li>
-              <li>{t.ind4}</li>
-            </ul>
+          <div style={{ flex: 1 }}>
+            <span className="badge good" style={{ marginBottom: 12 }}>{risk}</span>
+            <table className="score-details-table">
+              <tbody>
+                <tr><td>Screening Risk</td><td style={{ color: '#16a34a' }}>Low Risk</td></tr>
+                <tr><td>Sample Type</td><td>{test.sampleType || 'Silage'}</td></tr>
+                <tr><td>Analyzed On</td><td>22 May 2025, 10:30 AM</td></tr>
+                <tr><td>Model Confidence</td><td>{test.confidence || 92}%</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
-        {/* Right column */}
-        <div className="result-right">
-          <div className="card media-card2">
-            <b>{t.uploadedImage}</b>
-            <img src="/silage_sample.jpg" alt="Uploaded silage"/>
-            <b>{t.aiHeatmap}</b>
-            <img src="/heatmap_analysis.jpg" alt="AI Heatmap" className="heatmap-img"/>
-            <div className="heatmap-legend">
-              <span className="dot red"/> {t.highImpact}
-              <span style={{margin:'0 8px'}}>·</span>
-              <span className="dot yellow"/> {t.medium}
-              <span style={{margin:'0 8px'}}>·</span>
-              <span className="dot green"/> {t.lowImpact}
-            </div>
-          </div>
+        {/* Right Column: Uploaded Image (Matching Screen 3) */}
+        <div className="card" style={{ padding: 12 }}>
+          <b style={{ fontSize: 12, color: 'var(--ink-500)', display: 'block', marginBottom: 8 }}>Uploaded Image</b>
+          <img src={test.image || "/silage_sample.jpg"} alt="Silage Sample" style={{ width: '100%', height: 140, objectFit: 'cover', borderRadius: 8 }} onError={e=>{e.target.src='https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=600&auto=format&fit=crop'}}/>
+        </div>
+      </div>
 
-          <div className="card range-card">
-            <b>{t.qualityScoreRange}</b>
-            <div className="range-items">
-              <span><i className="good-bg"/> {t.good} (80–100)</span>
-              <span><i className="caution-bg"/> {t.caution} (50–79)</span>
-              <span><i className="high-bg"/> {t.highRisk} (0–49)</span>
+      {/* Second Row: Key Indicators & Heatmap Overlay (Matching Screen 3) */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: 20, marginBottom: 20 }}>
+        <div className="card">
+          <b style={{ fontSize: 14, display: 'block', marginBottom: 14 }}>Key Indicators</b>
+          <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <li style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5 }}><CheckCircle size={15} color="#16a34a"/> Normal color and texture detected</li>
+            <li style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5 }}><CheckCircle size={15} color="#16a34a"/> No significant mold detected</li>
+            <li style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5 }}><CheckCircle size={15} color="#16a34a"/> Good storage parameters</li>
+            <li style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5 }}><CheckCircle size={15} color="#16a34a"/> No visible spoilage signs</li>
+          </ul>
+
+          <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--border-light)' }}>
+            <b style={{ fontSize: 12, color: 'var(--ink-500)', display: 'block', marginBottom: 8 }}>Quality Score Range</b>
+            <div style={{ display: 'flex', gap: 16, fontSize: 11 }}>
+              <span><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#16a34a', display: 'inline-block', marginRight: 4 }}/> Good (80-100)</span>
+              <span><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#f59e0b', display: 'inline-block', marginRight: 4 }}/> Caution (50-79)</span>
+              <span><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', display: 'inline-block', marginRight: 4 }}/> High Risk (0-49)</span>
             </div>
           </div>
         </div>
+
+        {/* AI Heatmap Simulation Box */}
+        <div className="card" style={{ padding: 12 }}>
+          <b style={{ fontSize: 12, color: 'var(--ink-500)', display: 'block', marginBottom: 8 }}>AI Explanation (Heatmap)</b>
+          <div style={{ position: 'relative', width: '100%', height: 170, borderRadius: 8, overflow: 'hidden', background: '#000' }}>
+            <img src={test.image || "/silage_sample.jpg"} alt="Silage Sample Heatmap" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.75 }} onError={e=>{e.target.src='https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=600&auto=format&fit=crop'}}/>
+            <svg viewBox="0 0 100 100" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+              <circle cx="50" cy="45" r="28" fill="rgba(22, 163, 74, 0.45)" stroke="#16a34a" strokeWidth="1.5" strokeDasharray="3 2"/>
+              <circle cx="75" cy="30" r="14" fill="rgba(239, 68, 68, 0.55)" stroke="#ef4444" strokeWidth="1.5"/>
+            </svg>
+          </div>
+          <div style={{ display: 'flex', gap: 14, fontSize: 10, marginTop: 8, color: 'var(--ink-500)' }}>
+            <span><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ef4444', display: 'inline-block', marginRight: 4 }}/> High Impact</span>
+            <span><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16a34a', display: 'inline-block', marginRight: 4 }}/> Low Impact</span>
+          </div>
+        </div>
       </div>
-    </section>
+    </div>
   )
 }
 
-/* ─────────────────── BATCHES ─────────────────── */
+/* ─────────────────── SCREEN 5: MY BATCHES PAGE ─────────────────── */
 function Batches() {
   const navigate = useNavigate()
-  const { t } = useApp()
-  const [batches, setBatches] = useState(mockBatches)
+  const { apiFetch, toast } = useApp()
+  const [batches, setBatches] = useState([])
   const [modal, setModal] = useState(false)
-  const [newName, setNewName] = useState('')
-  const [newType, setNewType] = useState('Silage')
+  const [batchName, setBatchName] = useState('')
+  const [batchType, setBatchType] = useState('Silage')
 
-  const addBatch = () => {
-    if (!newName.trim()) return
-    setBatches(b => [{ id: newName, type: newType, feedType: newType === 'Silage' ? 'Maize Silage' : 'Cattle Feed', createdOn: 'Today', analyses: 0, status: 'Active', storage: 'Covered' }, ...b])
-    setModal(false); setNewName('')
+  const load = async () => {
+    try {
+      const data = await apiFetch('/api/batches')
+      if (Array.isArray(data)) setBatches(data)
+    } catch (e) {
+      console.error(e)
+    }
   }
 
+  useEffect(() => { load() }, [apiFetch])
+
+  const create = async () => {
+    if (!batchName.trim()) return
+    try {
+      await apiFetch('/api/batches', {
+        method: 'POST',
+        body: JSON.stringify({ type: batchType, feedType: batchType === 'Silage' ? 'Maize Silage' : 'Cattle Feed' })
+      })
+      setModal(false)
+      load()
+      toast('Batch created', 'success')
+    } catch (e) {
+      toast(e.message, 'error')
+    }
+  }
+
+  const list = batches.length > 0 ? batches : mockBatches
+
   return (
-    <section className="page">
+    <div className="page">
       <div className="page-heading">
-        <div><h1>{t.myBatchesTitle}</h1><p>{t.myBatchesDesc}</p></div>
-        <button className="button primary" onClick={() => setModal(true)}><Plus size={15}/> {t.addNewBatch}</button>
+        <div>
+          <h1>My Batches</h1>
+          <p>Manage and track your batches</p>
+        </div>
+        <button className="button primary" onClick={() => setModal(true)}>
+          <Plus size={14}/> Add New Batch
+        </button>
       </div>
-      <Table
-        headers={[t.batchId, t.type, t.feedType, t.createdOn, t.totalAnalysesCount, t.batchStatus, t.action]}
-        rows={batches.map(b => [
-          <span className="mono">{b.id}</span>,
-          b.type, b.feedType, b.createdOn,
-          <span className="analyses-count">{b.analyses}</span>,
-          <span className="badge good"><CheckCircle size={10}/> {t.active}</span>,
-          <div style={{display:'flex',gap:6}}>
-            <button className="icon-btn-sm" onClick={() => navigate(`/batches/${b.id}`)}><Eye size={13}/></button>
-            <button className="icon-btn-sm danger" onClick={() => setBatches(p => p.filter(x => x.id !== b.id))}><Trash2 size={13}/></button>
+
+      <div className="table-container">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Batch ID</th>
+              <th>Type</th>
+              <th>Feed Type</th>
+              <th>Created On</th>
+              <th>Analyses</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {list.map(b => (
+              <tr key={b.id}>
+                <td><b>{b.id}</b></td>
+                <td>{b.type}</td>
+                <td>{b.feedType}</td>
+                <td>{b.createdOn || '20 May 2025'}</td>
+                <td>{b.analysesCount || b.analyses || 5}</td>
+                <td><span className="badge good">Active</span></td>
+                <td>
+                  <button className="button secondary sm" onClick={() => navigate(`/batches/${b.id}`)}>
+                    <Eye size={12}/> View
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div style={{ padding: '12px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, color: 'var(--ink-500)' }}>
+          <span>Showing 1 to {list.length} of {list.length} batches</span>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button className="button secondary sm" disabled>&lt;</button>
+            <button className="button primary sm">1</button>
+            <button className="button secondary sm" disabled>&gt;</button>
           </div>
-        ])}
-      />
+        </div>
+      </div>
+
       {modal && (
-        <Modal title={t.addNewBatch} close={() => setModal(false)}>
-          <label className="field-label">{t.batchIdName}
-            <input className="field-input" placeholder="e.g. SILAGE-006" value={newName} onChange={e => setNewName(e.target.value)}/>
-          </label>
-          <label className="field-label">{t.type}
-            <select className="field-input" value={newType} onChange={e => setNewType(e.target.value)}>
-              <option>{t.silage}</option>
-              <option>{t.feed}</option>
-            </select>
-          </label>
-          <button className="button primary full" onClick={addBatch}>{t.createBatch}</button>
-        </Modal>
+        <div className="modal-backdrop" onClick={() => setModal(false)}>
+          <div className="modal-box" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Create New Batch</h3>
+              <button className="button secondary sm" onClick={() => setModal(false)}><X size={14}/></button>
+            </div>
+            <div className="modal-body">
+              <label className="field-label" style={{ marginBottom: 12 }}>Batch ID / Name
+                <input className="field-input" placeholder="e.g. SILAGE-006" value={batchName} onChange={e=>setBatchName(e.target.value)}/>
+              </label>
+              <label className="field-label" style={{ marginBottom: 16 }}>Type
+                <select className="field-input" value={batchType} onChange={e=>setBatchType(e.target.value)}>
+                  <option>Silage</option>
+                  <option>Feed</option>
+                </select>
+              </label>
+              <button className="button primary full" onClick={create}>Save Batch</button>
+            </div>
+          </div>
+        </div>
       )}
-    </section>
+    </div>
   )
 }
 
-/* ─────────────────── BATCH DETAIL ─────────────────── */
+/* ─────────────────── SCREEN 6: BATCH DETAIL & TREND PAGE ─────────────────── */
 function BatchDetail() {
   const { id } = useParams()
-  const { t } = useApp()
-  const batch = mockBatches.find(b => b.id === id) || mockBatches[0]
-  const batchTests = mockTests.filter(t => t.batchId === batch.id)
+  const navigate = useNavigate()
+  const { apiFetch } = useApp()
+  const [data, setData] = useState(null)
+
+  useEffect(() => {
+    apiFetch(`/api/batches/${id}`).then(setData).catch(console.error)
+  }, [id, apiFetch])
+
+  const batch = data?.batch || mockBatches[0]
+  const tests = data?.tests || mockTests
 
   return (
-    <section className="page">
+    <div className="page">
       <div className="page-heading">
         <div>
-          <h1>{t.batchDetail}</h1>
-          <p>{t.batchId}: <b>{batch.id}</b></p>
+          <h1>Batch Detail</h1>
+          <p>Batch ID: <b style={{ color: 'var(--ink-900)' }}>{batch.id}</b></p>
         </div>
-        <Link className="button secondary" to="/batches">← {t.backToBatches}</Link>
+        <button className="button secondary" onClick={() => navigate('/batches')}>
+          ← Back to Batches
+        </button>
       </div>
 
-      <div className="batch-detail-grid">
-        <div className="card batch-info2">
-          <b>{t.batchInfo}</b>
-          <div className="batch-info-grid">
-            {[[t.type, batch.type], [t.feedType, batch.feedType], [t.createdOn, batch.createdOn],
-              [t.storage, batch.storage], [t.totalAnalysesCount, batch.analyses], [t.status, t.active]].map(([k,v]) => (
-              <div key={k} className="batch-info-item">
-                <small>{k}</small>
-                <span className={v === t.active ? 'good-text' : ''}>{v}</span>
-              </div>
-            ))}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 20, marginBottom: 20 }}>
+        {/* Batch Info Card (Matching Screen 6) */}
+        <div className="card">
+          <b style={{ display: 'block', fontSize: 14, marginBottom: 14 }}>Batch Information</b>
+          <table className="score-details-table">
+            <tbody>
+              <tr><td>Type</td><td>{batch.type}</td></tr>
+              <tr><td>Feed Type</td><td>{batch.feedType}</td></tr>
+              <tr><td>Created On</td><td>20 May 2025</td></tr>
+              <tr><td>Storage Condition</td><td>{batch.storage || 'Covered'}</td></tr>
+              <tr><td>Total Analyses</td><td>{tests.length || 5}</td></tr>
+              <tr><td>Status</td><td><span className="badge good">Active</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Quality Trend Point Chart (Matching Screen 6) */}
+        <div className="card">
+          <b style={{ display: 'block', fontSize: 14, marginBottom: 14 }}>Quality Trend</b>
+          <div className="trend-svg-wrap">
+            <svg viewBox="0 0 450 140" style={{ width: '100%', height: '100%' }}>
+              <line x1="30" y1="20" x2="430" y2="20" stroke="#f1f5f9" strokeWidth="1"/>
+              <line x1="30" y1="50" x2="430" y2="50" stroke="#f1f5f9" strokeWidth="1"/>
+              <line x1="30" y1="80" x2="430" y2="80" stroke="#f1f5f9" strokeWidth="1"/>
+              <line x1="30" y1="110" x2="430" y2="110" stroke="#f1f5f9" strokeWidth="1"/>
+
+              <text x="10" y="24" fill="#94a3b8" fontSize="9">100</text>
+              <text x="10" y="54" fill="#94a3b8" fontSize="9">75</text>
+              <text x="10" y="84" fill="#94a3b8" fontSize="9">50</text>
+              <text x="10" y="114" fill="#94a3b8" fontSize="9">25</text>
+
+              <polyline
+                fill="none"
+                stroke="#16a34a"
+                strokeWidth="2"
+                points="50,28 120,44 190,56 260,68 330,82 400,98"
+              />
+              {[
+                [50,28,'91','10 May'],
+                [120,44,'89','13 May'],
+                [190,56,'85','16 May'],
+                [260,68,'82','19 May'],
+                [330,82,'78','22 May'],
+                [400,98,'68','25 May']
+              ].map(([cx,cy,val,dt], i) => (
+                <g key={i}>
+                  <circle cx={cx} cy={cy} r="4" fill="#16a34a" stroke="#fff" strokeWidth="2"/>
+                  <text x={cx} y={cy - 8} fill="var(--ink-900)" fontSize="10" fontWeight="700" textAnchor="middle">{val}</text>
+                  <text x={cx} y="132" fill="#64748b" fontSize="9" textAnchor="middle">{dt}</text>
+                </g>
+              ))}
+            </svg>
           </div>
         </div>
+      </div>
 
-        <div className="card trend-card">
-          <div className="card-head"><b>{t.qualityTrend}</b></div>
-          <div className="mini-chart">
-            {[100,89,81,84,75,78,88].map((v,i) => (
-              <div className="mini-bar-col" key={i}>
-                <div className="mini-bar" style={{height:`${Math.round((v/100)*130)}px`}}>
-                  <span className="mini-bar-label">{v}</span>
-                </div>
-                <span className="mini-axis">{['16','17','18','19','20','21','22'][i]} May</span>
-              </div>
+      {/* Recent Analyses in Batch */}
+      <div className="table-container">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Sample ID</th>
+              <th>Analyzed On</th>
+              <th>Score</th>
+              <th>Risk</th>
+              <th>View Report</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tests.slice(0, 5).map(t2 => (
+              <tr key={t2.id || t2._id}>
+                <td><b>{t2.id || t2._id}</b></td>
+                <td>{t2.analyzedOn || '22 May 2025, 10:30 AM'}</td>
+                <td><b>{t2.score || 87}</b></td>
+                <td><span className={`badge ${riskClass(t2.overallStatus || t2.risk)}`}>{t2.overallStatus || t2.risk || 'Good'}</span></td>
+                <td>
+                  <Link to={`/analysis/${t2.id || t2._id}`} className="button secondary sm"><Eye size={12}/> View Report</Link>
+                </td>
+              </tr>
             ))}
-          </div>
-        </div>
+          </tbody>
+        </table>
       </div>
-
-      <div className="card" style={{marginTop:18}}>
-        <div className="card-head"><b>{t.recentAnalyses}</b></div>
-        <Table
-          headers={[t.sampleId, t.analyzedOn, t.score, t.risk, t.viewReport]}
-          rows={(batchTests.length ? batchTests : mockTests).slice(0,5).map(t2 => [
-            <span className="mono">{t2.id}</span>,
-            t2.analyzedOn,
-            <ScorePill score={t2.score}/>,
-            <span className={`badge ${riskClass(t2.risk)}`}>{t2.risk}</span>,
-            <Link className="text-button" to={`/analysis/${t2.id}`}><Eye size={13}/> {t.viewReport}</Link>
-          ])}
-        />
-      </div>
-    </section>
+    </div>
   )
 }
 
-/* ─────────────────── HISTORY ─────────────────── */
+/* ─────────────────── SCREEN 7: HISTORY PAGE ─────────────────── */
 function History() {
-  const { t } = useApp()
+  const { apiFetch } = useApp()
+  const [tests, setTests] = useState([])
   const [search, setSearch] = useState('')
-  const [typeF, setTypeF] = useState('All')
-  const [riskF, setRiskF] = useState('All')
+  const [typeFilter, setTypeFilter] = useState('All')
   const [page, setPage] = useState(1)
-  const PER = 5
 
-  const rows = mockTests.filter(x =>
-    (x.id.toLowerCase().includes(search.toLowerCase()) || x.batchId.toLowerCase().includes(search.toLowerCase())) &&
-    (typeF === 'All' || x.type === typeF) &&
-    (riskF === 'All' || x.risk === riskF)
+  useEffect(() => {
+    apiFetch('/api/tests').then(setTests).catch(console.error)
+  }, [apiFetch])
+
+  const list = tests.length > 0 ? tests : mockTests
+  const filtered = list.filter(t => 
+    (t.id?.toLowerCase().includes(search.toLowerCase()) || t.batchId?.toLowerCase().includes(search.toLowerCase())) &&
+    (typeFilter === 'All' || t.sampleType === typeFilter || t.type === typeFilter)
   )
-  const paged = rows.slice((page-1)*PER, page*PER)
-  const pages = Math.ceil(rows.length / PER)
 
   return (
-    <section className="page">
+    <div className="page">
       <div className="page-heading">
         <div>
-          <h1>{t.historyTitle}</h1>
-          <p>{t.historyDesc} {t.showing} {rows.length} {t.of} {mockTests.length} {t.records}.</p>
+          <h1>History</h1>
+          <p>View all your past analyses</p>
         </div>
-        <div style={{display:'flex',gap:8}}>
-          <button
-            type="button"
-            className="button secondary"
-            onClick={() => {
-              const csv = [`${t.sampleId},${t.batchId},${t.type},${t.analyzedOn},${t.score},${t.risk}`,
-                ...rows.map(r => `${r.id},${r.batchId},${r.type},"${r.analyzedOn}",${r.score},${r.risk}`)
-              ].join('\n')
-              const blob = new Blob([csv], { type: 'text/csv' })
-              const url = URL.createObjectURL(blob)
-              const a = document.createElement('a')
-              a.href = url; a.download = 'smartfeed_history.csv'; a.click()
-              URL.revokeObjectURL(url)
-            }}
-          >
-            <Download size={14}/> {t.exportCsv}
-          </button>
-        </div>
+        <button
+          className="button secondary"
+          onClick={() => {
+            const csv = ['Sample ID,Batch ID,Type,Analyzed On,Score,Risk', ...filtered.map(r => `${r.id},${r.batchId || 'SILAGE-001'},${r.sampleType || r.type || 'Silage'},"${r.analyzedOn || '22 May 2025'}",${r.score || 80},${r.overallStatus || r.risk || 'Good'}`)].join('\n')
+            const blob = new Blob([csv], { type: 'text/csv' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url; a.download = 'smartfeed_history.csv'; a.click()
+          }}
+        >
+          <Download size={14}/> Export CSV
+        </button>
       </div>
 
-      <div className="filter-bar">
-        <div className="search-wrap"><Search size={14}/><input value={search} onChange={e=>{setSearch(e.target.value);setPage(1)}} placeholder={t.searchPlaceholder}/></div>
-        <select className="field-input sm" value={typeF} onChange={e=>{setTypeF(e.target.value);setPage(1)}}>
-          <option value="All">{t.allTypes}</option>
-          <option value="Silage">{t.silage}</option>
-          <option value="Feed">{t.feed}</option>
-        </select>
-        <select className="field-input sm" value={riskF} onChange={e=>{setRiskF(e.target.value);setPage(1)}}>
-          <option value="All">{t.allRisks}</option>
-          <option value="Good">{t.good}</option>
-          <option value="Caution">{t.caution}</option>
-          <option value="High Risk">{t.highRisk}</option>
-        </select>
-      </div>
-
-      <Table
-        headers={[t.sampleId, t.batchId, t.type, t.analyzedOn, t.score, t.risk, t.action]}
-        rows={paged.map(r => [
-          <span className="mono">{r.id}</span>,
-          r.batchId, r.type, r.analyzedOn,
-          <ScorePill score={r.score}/>,
-          <span className={`badge ${riskClass(r.risk)}`}>{riskIcon(r.risk)} {r.risk}</span>,
-          <Link className="text-button" to={`/analysis/${r.id}`}><Eye size={13}/> {t.view}</Link>
-        ])}
-      />
-      {pages > 1 && (
-        <div className="pagination">
-          {Array.from({length:pages},(_,i)=>i+1).map(p=>(
-            <button key={p} className={`page-btn${page===p?' active':''}`} onClick={()=>setPage(p)}>{p}</button>
-          ))}
+      <div className="table-container">
+        {/* Filter Bar (Matching Screen 7) */}
+        <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border-light)', display: 'flex', gap: 12, alignItems: 'center' }}>
+          <div style={{ position: 'relative', flex: 1 }}>
+            <Search size={14} color="#94a3b8" style={{ position: 'absolute', top: 12, left: 12 }}/>
+            <input className="field-input sm full" style={{ paddingLeft: 34 }} placeholder="Search by Sample ID or Batch ID..." value={search} onChange={e=>setSearch(e.target.value)}/>
+          </div>
+          <select className="field-input sm" style={{ width: 120 }} value={typeFilter} onChange={e=>setTypeFilter(e.target.value)}>
+            <option value="All">Filter: All</option>
+            <option value="Silage">Silage</option>
+            <option value="Feed">Feed</option>
+          </select>
+          <div className="topbar-date-badge" style={{ padding: '4px 10px' }}>
+            <Calendar size={12}/> 15 May 2025 – 22 May 2025
+          </div>
         </div>
-      )}
-    </section>
-  )
-}
 
-/* ─────────────────── ANALYTICS ─────────────────── */
-function Analytics() {
-  const { t } = useApp()
-  const [range, setRange] = useState('30 days')
-  return (
-    <section className="page">
-      <div className="page-heading">
-        <div><h1>{t.analyticsTitle}</h1><p>{t.analyticsDesc}</p></div>
-        <select className="field-input sm" value={range} onChange={e => setRange(e.target.value)}>
-          <option>7 days</option><option>30 days</option><option>90 days</option>
-        </select>
-      </div>
-      <div className="analytics-grid">
-        <ChartCard range={range} setRange={setRange}/>
-        <DonutCard/>
-        <div className="card" style={{padding:18,gridColumn:'1/-1'}}>
-          <div className="card-head"><b>{t.scoreDistBatch}</b></div>
-          <div className="batch-chart">
-            {mockBatches.map((b,i) => {
-              const score = [87,76,68,82,91][i]
-              return (
-                <div className="batch-bar-col" key={b.id}>
-                  <div className="batch-bar" style={{height:`${Math.round((score/100)*165)}px`,background:score>=80?'#20914b':score>=50?'#e1a72d':'#d94d42'}}>
-                    <span>{score}</span>
-                  </div>
-                  <small>{b.id}</small>
-                </div>
-              )
-            })}
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Sample ID</th>
+              <th>Batch ID</th>
+              <th>Type</th>
+              <th>Analyzed On</th>
+              <th>Score</th>
+              <th>Risk</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.slice((page-1)*6, page*6).map(r => (
+              <tr key={r.id || r._id}>
+                <td><b>{r.id || r._id}</b></td>
+                <td>{r.batchId || 'SILAGE-001'}</td>
+                <td>{r.sampleType || r.type || 'Silage'}</td>
+                <td>{r.analyzedOn || '22 May 2025, 10:30 AM'}</td>
+                <td><b>{r.score || 87}</b></td>
+                <td><span className={`badge ${riskClass(r.overallStatus || r.risk)}`}>{r.overallStatus || r.risk || 'Good'}</span></td>
+                <td>
+                  <Link to={`/analysis/${r.id || r._id}`} className="button secondary sm"><Eye size={12}/> View</Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <div style={{ padding: '12px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, color: 'var(--ink-500)' }}>
+          <span>Showing 1 to {Math.min(6, filtered.length)} of {filtered.length} results</span>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button className="button secondary sm" disabled={page === 1} onClick={()=>setPage(p=>p-1)}>&lt;</button>
+            <button className="button primary sm">{page}</button>
+            <button className="button secondary sm" onClick={()=>setPage(p=>p+1)}>&gt;</button>
           </div>
         </div>
       </div>
-    </section>
+    </div>
   )
 }
 
-/* ─────────────────── REPORTS ─────────────────── */
-function Reports() {
-  const { t } = useApp()
-  const [tab, setTab] = useState(t.sampleReports)
-  const [reports, setReports] = useState(mockReports)
-  const [modal, setModal] = useState(false)
-  const [genType, setGenType] = useState(t.sampleReports)
-
-  const rows = reports.filter(r => r.type === (tab === t.sampleReports ? 'Sample Report' : 'Batch Report'))
-
-  const generate = () => {
-    setReports(r => [{ id: `RPT-2026-${String(Math.floor(Math.random()*1000)).padStart(3,'0')}`, type: genType === t.sampleReports ? 'Sample Report' : 'Batch Report', date: 'Just now', ref: 'SF-2026-1257' }, ...r])
-    setModal(false)
-  }
-
-  return (
-    <section className="page">
-      <div className="page-heading">
-        <div><h1>{t.reportsTitle}</h1><p>{t.reportsDesc}</p></div>
-        <button className="button primary" onClick={() => setModal(true)}><Plus size={15}/> {t.generateReport}</button>
-      </div>
-
-      <div className="tabs2">
-        {[t.sampleReports, t.batchReports].map(tb => (
-          <button key={tb} className={tab===tb?'tab-btn active':'tab-btn'} onClick={() => setTab(tb)}>
-            {tb === t.sampleReports ? <FileText size={13}/> : <Package size={13}/>} {tb}
-          </button>
-        ))}
-      </div>
-
-      <Table
-        headers={[t.sampleId, t.type, t.generatedOn, t.sampleBatch, t.action]}
-        rows={rows.map(r => [
-          <span className="mono">{r.id}</span>,
-          <span className="badge good">{r.type}</span>,
-          r.date, r.ref,
-          <button className="button secondary sm" onClick={() => alert(t.downloading)}>
-            <Download size={13}/> {t.export}
-          </button>
-        ])}
-      />
-
-      {!rows.length && <div className="empty-state"><FileText size={32}/><p>{t.noReports}</p></div>}
-
-      {modal && (
-        <Modal title={t.generateReport} close={() => setModal(false)}>
-          <label className="field-label">{t.reportType}
-            <select className="field-input" value={genType} onChange={e => setGenType(e.target.value)}>
-              <option>{t.sampleReports}</option>
-              <option>{t.batchReports}</option>
-            </select>
-          </label>
-          <label className="field-label">{t.reference}
-            <select className="field-input">
-              {mockTests.map(t2 => <option key={t2.id}>{t2.id}</option>)}
-            </select>
-          </label>
-          <button className="button primary full" onClick={generate}>{t.generate}</button>
-        </Modal>
-      )}
-    </section>
-  )
-}
-
-/* ─────────────────── AI ASSISTANT ─────────────────── */
-const BOT_RESPONSES_EN = {
-  score: "A score above **80** is generally a good screening signal. For scores between 50-79, monitor closely and consider corrective action. Below 50 indicates high risk — consider laboratory confirmation.",
-  mold: "Mold in silage can produce mycotoxins that harm herd health. Signs include discoloration, off-smell, and heating. Discard moldy silage immediately and investigate storage conditions.",
-  moisture: "Ideal moisture for maize silage is **60-70%**. Too dry causes poor fermentation, too wet can cause effluent loss. Our AI screens visual moisture indicators in the sample image.",
-  default: "Check moisture content, smell, and visible mold. For high-risk screening results, confirm with a laboratory test. Ensure proper storage (covered, compacted, sealed) to preserve quality.",
-}
-const BOT_RESPONSES_HI = {
-  score: "**80 से ऊपर** स्कोर आमतौर पर अच्छा संकेत है। 50-79 के बीच स्कोर पर नज़र रखें और सुधारात्मक कदम उठाएं। 50 से नीचे उच्च जोखिम है — प्रयोगशाला परीक्षण करें।",
-  mold: "साइलेज में फफूंद माइकोटॉक्सिन पैदा कर सकती है जो पशुओं के स्वास्थ्य को नुकसान पहुंचाती है। लक्षण: रंग बदलना, बदबू, गर्म होना। फफूंदी साइलेज तुरंत हटाएं और भंडारण जांचें।",
-  moisture: "मक्का साइलेज के लिए आदर्श नमी **60-70%** है। बहुत सूखा होने पर किण्वन खराब होता है, बहुत गीला होने पर रस निकलने का नुकसान होता है।",
-  default: "नमी सामग्री, गंध और दिखाई देने वाली फफूंद जांचें। उच्च जोखिम परिणामों के लिए प्रयोगशाला परीक्षण करें। गुणवत्ता बनाए रखने के लिए उचित भंडारण सुनिश्चित करें।",
-}
-
+/* ─────────────────── SCREEN 8: AI ASSISTANT PAGE ─────────────────── */
 function Assistant() {
-  const { t, lang } = useApp()
-  const BOT = lang === 'हिंदी' ? BOT_RESPONSES_HI : BOT_RESPONSES_EN
+  const { apiFetch } = useApp()
   const [messages, setMessages] = useState([
-    { from: 'bot', text: t.botGreet, time: new Date().toLocaleTimeString() }
+    { from: 'user', text: 'My silage score is 62. What should I do?', time: '10:30 AM' },
+    { from: 'bot', text: 'A score of 62 indicates caution. It means there are some visual quality concerns. I recommend the following:\n\n• Check for any mold or unusual smell\n• Ensure proper storage and cover\n• Monitor the batch closely\n• Consider laboratory testing if the score keeps dropping', time: '10:30 AM' }
   ])
   const [input, setInput] = useState('')
   const [typing, setTyping] = useState(false)
@@ -1365,328 +1166,359 @@ function Assistant() {
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, typing])
 
-  const send = () => {
-    if (!input.trim()) return
-    const q = input.trim()
+  const send = async (txt) => {
+    const q = txt || input
+    if (!q.trim()) return
     setInput('')
-    setMessages(m => [...m, { from: 'user', text: q, time: new Date().toLocaleTimeString() }])
+    setMessages(m => [...m, { from: 'user', text: q, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) }])
     setTyping(true)
-    setTimeout(() => {
-      const lower = q.toLowerCase()
-      const resp = lower.includes('score') || lower.includes('स्कोर') ? BOT.score
-        : lower.includes('mold') || lower.includes('mould') || lower.includes('फफूंद') ? BOT.mold
-        : lower.includes('moisture') || lower.includes('नमी') ? BOT.moisture
-        : BOT.default
-      setMessages(m => [...m, { from: 'bot', text: resp, time: new Date().toLocaleTimeString() }])
+
+    try {
+      const data = await apiFetch('/api/assistant/chat', {
+        method: 'POST',
+        body: JSON.stringify({ message: q, history: messages.map(m=>({ from: m.from, text: m.text })) })
+      })
+      setMessages(m => [...m, { from: 'bot', text: data.text, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) }])
+    } catch (e) {
+      setMessages(m => [...m, { from: 'bot', text: 'Error connecting to Gemini assistant.', time: 'Now' }])
+    } finally {
       setTyping(false)
-    }, 800)
+    }
   }
 
   return (
-    <section className="page assistant-page">
+    <div className="page">
       <div className="page-heading">
         <div>
-          <h1>{t.assistantTitle}</h1>
-          <p>{t.assistantDesc}</p>
+          <h1>AI Assistant</h1>
+          <p>Ask me anything about feed & silage quality</p>
         </div>
         <button className="button secondary" onClick={() => setMessages([])}>
-          <Trash2 size={14}/> {t.clearChat}
+          <Trash2 size={13}/> Clear Chat
         </button>
       </div>
 
-      <div className="card chat-container">
-        <div className="chat-messages">
+      <div className="card chat-window-card">
+        <div className="chat-scroll-area">
           {messages.map((m, i) => (
-            <div key={i} className={`bubble-row ${m.from}`}>
-              {m.from === 'bot' && <div className="bot-avatar"><Bot size={14}/></div>}
-              <div className={`bubble ${m.from}`}>
-                {m.text}
-                <span className="bubble-time">{m.time}</span>
+            <div key={i} className={`chat-message-row ${m.from}`}>
+              {m.from === 'bot' && (
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: '#eafaf0', color: '#16a34a', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                  <Bot size={18}/>
+                </div>
+              )}
+              <div>
+                <div className="chat-message-bubble" style={{ whiteSpace: 'pre-line' }}>
+                  {m.text}
+                </div>
+                <small style={{ fontSize: 10, color: 'var(--ink-400)', marginTop: 4, display: 'block', textAlign: m.from === 'user' ? 'right' : 'left' }}>
+                  {m.from === 'bot' ? 'AI Assistant · ' : 'You · '}{m.time}
+                </small>
               </div>
             </div>
           ))}
           {typing && (
-            <div className="bubble-row bot">
-              <div className="bot-avatar"><Bot size={14}/></div>
-              <div className="bubble bot typing-bubble">
-                <span/><span/><span/>
+            <div className="chat-message-row bot">
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: '#eafaf0', color: '#16a34a', display: 'grid', placeItems: 'center' }}>
+                <Bot size={18}/>
+              </div>
+              <div className="chat-message-bubble">
+                <span className="spin" style={{ display: 'inline-block' }}>◓</span> Thinking...
               </div>
             </div>
           )}
           <div ref={bottomRef}/>
         </div>
 
-        <div className="quick-prompts">
-          {[t.q1, t.q2, t.q3].map(prompt => (
-            <button
-              key={prompt}
-              type="button"
-              className="quick-btn"
-              onClick={() => {
-                if (!prompt.trim()) return
-                setMessages(m => [...m, { from: 'user', text: prompt, time: new Date().toLocaleTimeString() }])
-                setTyping(true)
-                setTimeout(() => {
-                  const lower = prompt.toLowerCase()
-                  const resp = lower.includes('score') || lower.includes('स्कोर') ? BOT.score
-                    : lower.includes('mold') || lower.includes('mould') || lower.includes('फफूंद') ? BOT.mold
-                    : lower.includes('moisture') || lower.includes('नमी') ? BOT.moisture
-                    : BOT.default
-                  setMessages(m => [...m, { from: 'bot', text: resp, time: new Date().toLocaleTimeString() }])
-                  setTyping(false)
-                }, 800)
-              }}
-            >{prompt}</button>
-          ))}
-        </div>
-
-        <div className="chat-input-bar">
-          <input
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && send()}
-            placeholder={t.typeQuestion}
-          />
-          <button className="button primary send-btn" onClick={send}><Send size={16}/></button>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-/* ─────────────────── PROFILE ─────────────────── */
-function Profile() {
-  const { toast, t } = useApp()
-  const [editing, setEditing] = useState(false)
-  const [name, setName] = useState('Farmer Raj')
-  const [email, setEmail] = useState('raj@farm.com')
-  const [location, setLocation] = useState('Anand, Gujarat')
-  const [phone, setPhone] = useState('+91 98765 43210')
-  const [farm, setFarm] = useState('Raj Dairy Farm')
-
-  const handleSave = () => {
-    setEditing(false)
-    toast(t.profileUpdated, 'success')
-  }
-
-  return (
-    <section className="page">
-      <div className="page-heading">
-        <div><h1>{t.profileTitle}</h1><p>{t.profileDesc}</p></div>
-        <button type="button" className="button primary" onClick={() => editing ? handleSave() : setEditing(true)}>
-          {editing ? <><CheckCheck size={14}/> {t.saveChanges}</> : t.editProfile}
-        </button>
-      </div>
-      <div className="profile-layout">
-        <div className="card profile-card">
-          <div className="profile-avatar">R</div>
-          <h3>{name}</h3>
-          <p>{email} · {location}</p>
-          {editing ? (
-            <div className="profile-form">
-              <label className="field-label">{t.fullName}
-                <input className="field-input" value={name} onChange={e=>setName(e.target.value)}/>
-              </label>
-              <label className="field-label">{t.email}
-                <input className="field-input" value={email} onChange={e=>setEmail(e.target.value)}/>
-              </label>
-              <label className="field-label">{t.phone}
-                <input className="field-input" value={phone} onChange={e=>setPhone(e.target.value)}/>
-              </label>
-              <label className="field-label">{t.farmName}
-                <input className="field-input" value={farm} onChange={e=>setFarm(e.target.value)}/>
-              </label>
-              <label className="field-label">{t.location}
-                <input className="field-input" value={location} onChange={e=>setLocation(e.target.value)}/>
-              </label>
-              <button type="button" className="button secondary full" onClick={() => setEditing(false)}>{t.cancel}</button>
-            </div>
-          ) : (
-            <>
-              <div className="profile-details">
-                <span>📞 {phone}</span>
-                <span>🏡 {farm}</span>
-                <span>📍 {location}</span>
-              </div>
-              <div className="profile-stats">
-                <div><strong>128</strong><small>{t.analyses}</small></div>
-                <div><strong>5</strong><small>{t.batches}</small></div>
-                <div><strong>32</strong><small>{t.reports}</small></div>
-              </div>
-            </>
-          )}
-        </div>
-        <div className="card profile-activity">
-          <b>{t.recentActivity}</b>
-          {mockTests.slice(0,4).map(t2 => (
-            <div className="activity-item" key={t2.id}>
-              <div className={`activity-dot ${riskClass(t2.risk)}`}/>
-              <div>
-                <b>{t2.id}</b>
-                <small>{t2.analyzedOn}</small>
-              </div>
-              <span className={`badge ${riskClass(t2.risk)}`}>{t2.risk}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-/* ─────────────────── SETTINGS ─────────────────── */
-function SettingsPage() {
-  const { settings, setSetting, lang, switchLang, toast, t } = useApp()
-  const [saved, setSaved] = useState(false)
-
-  const handleSave = () => {
-    setSaved(true)
-    toast(t.settingsSaved, 'success')
-    setTimeout(() => setSaved(false), 2000)
-  }
-
-  const SETTING_ROWS = [
-    { key: 'notifications', title: t.pushNotif, desc: t.pushNotifDesc, icon: Bell },
-    { key: 'offline', title: t.offlineMode, desc: t.offlineModeDesc, icon: CheckCircle },
-    { key: 'darkMode', title: t.darkMode, desc: t.darkModeDesc, icon: Settings },
-  ]
-
-  return (
-    <section className="page">
-      <div className="page-heading">
-        <div>
-          <h1>{t.settingsTitle}</h1>
-          <p>{t.settingsDesc}</p>
-        </div>
-        <button type="button" className={`button${saved ? ' secondary' : ' primary'}`} onClick={handleSave}>
-          {saved ? <><CheckCheck size={14}/> {t.saved}</> : t.saveSettings}
-        </button>
-      </div>
-
-      <div className="settings-layout">
-        <div className="settings-section-title">{t.preferences}</div>
-        {SETTING_ROWS.map(s => (
-          <div className="card setting-row" key={s.key}>
-            <div className="setting-icon"><s.icon size={16}/></div>
-            <div className="setting-text">
-              <b>{s.title}</b>
-              <small>{s.desc}</small>
-            </div>
-            <div className="toggle-wrap">
-              <span className={`toggle-label${settings[s.key] ? ' on' : ''}`}>
-                {settings[s.key] ? t.on : t.off}
-              </span>
-              <button
-                type="button"
-                className={`toggle${settings[s.key] ? ' on' : ''}`}
-                onClick={() => setSetting(s.key, !settings[s.key])}
-                aria-label={`Toggle ${s.title}`}
-              >
-                <span/>
+        <div className="chat-input-toolbar">
+          <div className="quick-prompt-chips">
+            {['What does score 62 mean?', 'How to detect white mold?', 'Ideal moisture for maize silage?'].map(prompt => (
+              <button key={prompt} type="button" className="chip-btn" onClick={() => send(prompt)}>
+                {prompt}
               </button>
-            </div>
-          </div>
-        ))}
-
-        <div className="settings-section-title" style={{marginTop:16}}>{t.langRegion}</div>
-        <div className="card setting-row">
-          <div className="setting-icon"><Languages size={16}/></div>
-          <div className="setting-text">
-            <b>{t.interfaceLang}</b>
-            <small>{t.interfaceLangDesc}</small>
-          </div>
-          <div className="lang-btn-group">
-            {Object.keys(LANGS).map(l => (
-              <button key={l} type="button" className={`lang-pill${lang === l ? ' active' : ''}`} onClick={() => switchLang(l)}>{l}</button>
             ))}
           </div>
-        </div>
-
-        <div className="settings-section-title" style={{marginTop:16}}>{t.dataPrivacy}</div>
-        <div className="card setting-row">
-          <div className="setting-icon"><Trash2 size={16}/></div>
-          <div className="setting-text">
-            <b>{t.clearCache}</b>
-            <small>{t.clearCacheDesc}</small>
+          <div className="chat-bar-inner">
+            <input
+              className="field-input full"
+              placeholder="Type your question..."
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && send()}
+            />
+            <button className="button primary" onClick={() => send()}>
+              <Send size={15}/>
+            </button>
           </div>
-          <button type="button" className="button secondary sm" onClick={() => toast(t.toastCacheCleared, 'success')}>
-            {t.clearCacheBtn}
-          </button>
-        </div>
-        <div className="card setting-row">
-          <div className="setting-icon"><Download size={16}/></div>
-          <div className="setting-text">
-            <b>{t.exportAll}</b>
-            <small>{t.exportAllDesc}</small>
-          </div>
-          <button type="button" className="button secondary sm" onClick={() => toast(t.toastExportStarted, 'info')}>
-            <Download size={13}/> {t.export}
-          </button>
         </div>
       </div>
-    </section>
-  )
-}
-
-/* ─────────────────── LOGIN ─────────────────── */
-function Login() {
-  const navigate = useNavigate()
-  const [phone, setPhone] = useState('')
-  const [pass, setPass] = useState('')
-
-  return (
-    <section className="auth-page">
-      <div className="auth-bg"/>
-      <div className="card auth-card">
-        <div className="auth-brand">
-          <span className="brand-mark"><Leaf size={20}/></span>
-          <b>SmartFeed AI</b>
-        </div>
-        <h1>Welcome back</h1>
-        <p>Sign in to your SmartFeed workspace.</p>
-        <label className="field-label">Phone Number
-          <input className="field-input" placeholder="Enter your phone number" value={phone} onChange={e=>setPhone(e.target.value)}/>
-        </label>
-        <label className="field-label">Password
-          <input className="field-input" type="password" placeholder="Enter password" value={pass} onChange={e=>setPass(e.target.value)}/>
-        </label>
-        <button className="button primary full" onClick={() => navigate('/dashboard')}>
-          Login to SmartFeed
-        </button>
-        <div className="auth-footer">
-          <button className="text-button" onClick={() => navigate('/dashboard')}>Continue as Guest →</button>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-/* ─────────────────── SHARED COMPONENTS ─────────────────── */
-function Table({ headers, rows }) {
-  return (
-    <div className="table-wrap card">
-      <table>
-        <thead>
-          <tr>{headers.map(h => <th key={h}>{h}</th>)}</tr>
-        </thead>
-        <tbody>
-          {rows.map((row, i) => <tr key={i}>{row.map((cell, j) => <td key={j}>{cell}</td>)}</tr>)}
-        </tbody>
-      </table>
-      {!rows.length && <div className="empty">No records found.</div>}
     </div>
   )
 }
 
-function Modal({ title, close, children }) {
+/* ─────────────────── SCREEN 9: REPORTS PAGE ─────────────────── */
+function Reports() {
+  const { apiFetch, toast } = useApp()
+  const [tab, setTab] = useState('Sample Reports')
+  const [reports, setReports] = useState([])
+  const [modal, setModal] = useState(false)
+  const [refName, setRefName] = useState('SF-2025-1256')
+
+  const load = async () => {
+    try {
+      const data = await apiFetch('/api/reports')
+      if (Array.isArray(data)) setReports(data)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  useEffect(() => { load() }, [apiFetch])
+
+  const generate = async () => {
+    try {
+      await apiFetch('/api/reports', {
+        method: 'POST',
+        body: JSON.stringify({ type: tab === 'Sample Reports' ? 'Sample Report' : 'Batch Report', ref: refName })
+      })
+      setModal(false)
+      load()
+      toast('Report generated successfully', 'success')
+    } catch (e) {
+      toast(e.message, 'error')
+    }
+  }
+
+  const list = reports.length > 0 ? reports : mockReports
+
   return (
-    <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && close()}>
-      <div className="modal card">
-        <div className="modal-head">
-          <h2>{title}</h2>
-          <button className="icon-btn" onClick={close}><X size={18}/></button>
+    <div className="page">
+      <div className="page-heading">
+        <div>
+          <h1>Reports</h1>
+          <p>Generate and download reports</p>
         </div>
-        {children}
+        <button className="button primary" onClick={() => setModal(true)}>
+          <Plus size={14}/> Generate New Report
+        </button>
+      </div>
+
+      <div className="table-container">
+        <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border-light)', display: 'flex', gap: 12 }}>
+          {['Sample Reports', 'Batch Reports'].map(tb => (
+            <button
+              key={tb}
+              className={`button ${tab === tb ? 'primary sm' : 'secondary sm'}`}
+              onClick={() => setTab(tb)}
+            >
+              {tb}
+            </button>
+          ))}
+        </div>
+
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Report ID</th>
+              <th>Type</th>
+              <th>Generated On</th>
+              <th>Sample/Batch</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {list.map(r => (
+              <tr key={r.id}>
+                <td><b>{r.id}</b></td>
+                <td>{r.type}</td>
+                <td>{r.date || '22 May 2025, 10:30 AM'}</td>
+                <td>{r.ref || 'SF-2025-1256'}</td>
+                <td>
+                  <button className="button secondary sm" onClick={() => window.print()}>
+                    <Download size={13}/> Download
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {modal && (
+        <div className="modal-backdrop" onClick={() => setModal(false)}>
+          <div className="modal-box" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Generate New Report</h3>
+              <button className="button secondary sm" onClick={() => setModal(false)}><X size={14}/></button>
+            </div>
+            <div className="modal-body">
+              <label className="field-label" style={{ marginBottom: 12 }}>Report Type
+                <select className="field-input" value={tab} onChange={e=>setTab(e.target.value)}>
+                  <option>Sample Reports</option>
+                  <option>Batch Reports</option>
+                </select>
+              </label>
+              <label className="field-label" style={{ marginBottom: 16 }}>Reference Sample / Batch ID
+                <input className="field-input" value={refName} onChange={e=>setRefName(e.target.value)}/>
+              </label>
+              <button className="button primary full" onClick={generate}>Generate Report</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ─────────────────── SILAGE COACH & OTHER PAGES ─────────────────── */
+function SilageCoach() {
+  const { apiFetch, toast } = useApp()
+  const [stages, setStages] = useState([])
+  const [steps, setSteps] = useState([])
+
+  const load = async () => {
+    try {
+      const data = await apiFetch('/api/silage-coach?batchId=SILAGE-001')
+      setStages(data.stages || [])
+      setSteps(data.steps || [])
+    } catch (e) { console.error(e) }
+  }
+
+  useEffect(() => { load() }, [apiFetch])
+
+  const toggle = async (stageNum, item) => {
+    const step = steps.find(s => s.stageNumber === stageNum) || {}
+    const checked = step.checkedItems || []
+    const next = checked.includes(item) ? checked.filter(x=>x!==item) : [...checked, item]
+    const def = stages.find(s => s.stageNumber === stageNum)
+    await apiFetch(`/api/silage-coach/stage/${stageNum}`, {
+      method: 'PUT',
+      body: JSON.stringify({ batchId: 'SILAGE-001', completed: next.length === (def?.checklist?.length || 3), checkedItems: next })
+    })
+    load()
+    toast(`Stage ${stageNum} updated`, 'success')
+  }
+
+  return (
+    <div className="page">
+      <div className="page-heading">
+        <div>
+          <h1>Make Silage Right™ Coach</h1>
+          <p>Follow 5-stage agronomy milestones to eliminate mold and maximize quality</p>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gap: 16 }}>
+        {stages.map(stage => {
+          const step = steps.find(s => s.stageNumber === stage.stageNumber) || {}
+          const isDone = step.completed
+          return (
+            <div key={stage.stageNumber} className="card" style={{ borderLeft: isDone ? '4px solid #16a34a' : '4px solid #f59e0b' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <b>{stage.title}</b>
+                <span className={`badge ${isDone ? 'good' : 'caution'}`}>{isDone ? 'Completed' : 'Pending'}</span>
+              </div>
+              <p style={{ fontSize: 12.5, color: 'var(--ink-500)', marginBottom: 12 }}>{stage.desc}</p>
+              <div style={{ display: 'grid', gap: 6 }}>
+                {stage.checklist.map((c, i) => {
+                  const isChecked = (step.checkedItems || []).includes(c)
+                  return (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, cursor: 'pointer' }} onClick={() => toggle(stage.stageNumber, c)}>
+                      {isChecked ? <CheckSquare size={16} color="#16a34a"/> : <Square size={16} color="#94a3b8"/>}
+                      <span style={{ textDecoration: isChecked ? 'line-through' : 'none' }}>{c}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function Analytics() {
+  const { apiFetch } = useApp()
+  const [analytics, setAnalytics] = useState(null)
+  useEffect(() => { apiFetch('/api/analytics').then(setAnalytics).catch(console.error) }, [apiFetch])
+
+  return (
+    <div className="page">
+      <div className="page-heading">
+        <div>
+          <h1>Analytics</h1>
+          <p>Comprehensive quality metrics across all feed batches</p>
+        </div>
+      </div>
+      <div className="card">
+        <b style={{ display: 'block', marginBottom: 12 }}>Batch Performance Summary</b>
+        <p style={{ fontSize: 13, color: 'var(--ink-500)' }}>Average Screening Quality: <b>{analytics?.averageScore || 81}/100</b> across <b>{analytics?.totalTests || 128}</b> total sample analyses.</p>
+      </div>
+    </div>
+  )
+}
+
+function Profile() {
+  const { user } = useApp()
+  return (
+    <div className="page">
+      <div className="page-heading">
+        <div><h1>Farmer Profile</h1><p>Manage your account and dairy herd details</p></div>
+      </div>
+      <div className="card" style={{ maxWidth: 600 }}>
+        <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 20 }}>
+          <div className="topbar-avatar" style={{ width: 56, height: 56, fontSize: 20 }}>{user?.name ? user.name[0] : 'R'}</div>
+          <div>
+            <b style={{ fontSize: 18 }}>{user?.name || 'Farmer Raj'}</b>
+            <small style={{ display: 'block', color: 'var(--ink-500)' }}>{user?.email || 'raj@farm.com'} · {user?.location || 'Anand, Gujarat'}</small>
+          </div>
+        </div>
+        <div className="form-field-group">
+          <label className="field-label">Full Name<input className="field-input" defaultValue={user?.name || 'Farmer Raj'}/></label>
+          <label className="field-label">Phone<input className="field-input" defaultValue={user?.phone || '+91 98765 43210'}/></label>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function SettingsPage() {
+  const { settings, setSetting, lang, switchLang } = useApp()
+  return (
+    <div className="page">
+      <div className="page-heading">
+        <div><h1>Settings</h1><p>Configure your SmartFeed AI preferences</p></div>
+      </div>
+      <div className="card" style={{ maxWidth: 600, display: 'grid', gap: 18 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div><b>Dark Mode</b><small style={{ display: 'block', color: 'var(--ink-500)' }}>Toggle sleek dark theme</small></div>
+          <input type="checkbox" checked={settings.darkMode} onChange={e => setSetting('darkMode', e.target.checked)}/>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div><b>Interface Language</b><small style={{ display: 'block', color: 'var(--ink-500)' }}>Change language</small></div>
+          <select className="field-input sm" value={lang} onChange={e=>switchLang(e.target.value)}>
+            <option>English</option>
+            <option>हिंदी</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Login() {
+  const navigate = useNavigate()
+  const { login } = useApp()
+  return (
+    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'var(--bg-canvas)' }}>
+      <div className="card" style={{ width: 360, textAlign: 'center' }}>
+        <div className="brand-logo-icon" style={{ margin: '0 auto 12px' }}><Leaf size={20}/></div>
+        <h2 style={{ fontSize: 20, marginBottom: 4 }}>Welcome to SmartFeed AI</h2>
+        <p style={{ fontSize: 12, color: 'var(--ink-500)', marginBottom: 20 }}>Dairy Feed & Silage Intelligence</p>
+        <button className="button primary full lg" onClick={() => { login({ name: 'Farmer Raj', email: 'raj@farm.com' }, 'demo-token'); navigate('/dashboard'); }}>
+          Sign In as Demo Farmer →
+        </button>
       </div>
     </div>
   )

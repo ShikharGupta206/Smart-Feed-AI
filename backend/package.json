@@ -2,8 +2,13 @@
   "name": "smartfeed-ai-backend",
   "private": true,
   "type": "module",
-  "scripts": {"dev": "node --watch src/index.js", "start": "node src/index.js"},
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "test": "node test_api.js"
+  },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
