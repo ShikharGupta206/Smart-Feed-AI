@@ -32,9 +32,17 @@ function App() {
   const [toasts, setToasts] = useState([])
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('smartfeed_user')
-    return saved ? JSON.parse(saved) : { _id: '664f1a2b3c4d5e6f7a8b9c01', name: 'Farmer Raj', email: 'raj@farm.com', phone: '+91 98765 43210', location: 'Anand, Gujarat' }
+    return saved ? JSON.parse(saved) : { _id: '664f1a2b3c4d5e6f7a8b9c01', name: 'Farmer Raj', email: 'raj@farm.com', phone: '+91 98765 43210', location: 'Anand, Gujarat', cattleCount: 24 }
   })
   const [token, setToken] = useState(() => localStorage.getItem('smartfeed_token') || 'guest-token-mock')
+
+  const updateUser = useCallback((updatedFields) => {
+    setUser(prev => {
+      const updated = { ...(prev || {}), ...updatedFields }
+      localStorage.setItem('smartfeed_user', JSON.stringify(updated))
+      return updated
+    })
+  }, [])
 
   const t = LANGS[lang] || LANGS.English
   const locTerm = useCallback((term) => loc(term, lang), [lang])
@@ -81,7 +89,7 @@ function App() {
   const switchLang = (l) => { setLang(l) }
 
   return (
-    <AppCtx.Provider value={{ lang, t, loc: locTerm, settings, setSetting, switchLang, toast, user, token, login, logout, apiFetch }}>
+    <AppCtx.Provider value={{ lang, t, loc: locTerm, settings, setSetting, switchLang, toast, user, setUser, updateUser, token, login, logout, apiFetch }}>
       <div className={settings.darkMode ? 'dark-root' : ''}>
         <BrowserRouter>
           <Routes>
@@ -92,8 +100,8 @@ function App() {
         {toasts.length > 0 && (
           <div style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 1000, display: 'flex', flexDirection: 'column', gap: 8 }}>
             {toasts.map(t2 => (
-              <div key={t2.id} style={{ background: '#0f172a', color: '#fff', padding: '10px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
-                <CheckCircle size={14} color="#22c55e" />
+              <div key={t2.id} style={{ background: t2.type === 'error' ? '#7f1d1d' : t2.type === 'success' ? '#0f172a' : '#1e3a5f', color: '#fff', padding: '10px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+                {t2.type === 'error' ? <X size={14} color="#ef4444" /> : t2.type === 'success' ? <CheckCircle size={14} color="#22c55e" /> : <Info size={14} color="#60a5fa" />}
                 <span>{t2.msg}</span>
               </div>
             ))}
@@ -1563,7 +1571,7 @@ function MilkYield() {
           </div>
           <table className="data-table">
             <thead>
-              <tr><th>{t.yieldDate}</th><th>{t.batchId}</th><th>Total (L)</th><th>{t.cowCount}</th><th>{t.avgPerCow}</th><th>Notes</th><th>{t.actionCol}</th></tr>
+              <tr><th>{t.yieldDate}</th><th>{t.batchId}</th><th>{t.totalLitersCol || (lang === 'हिंदी' ? 'कुल (L)' : 'Total (L)')}</th><th>{t.cowCount}</th><th>{t.avgPerCow}</th><th>{t.notesCol || (lang === 'हिंदी' ? 'नोट्स' : 'Notes')}</th><th>{t.actionCol}</th></tr>
             </thead>
             <tbody>
               {logs.length > 0 ? (
@@ -1583,7 +1591,7 @@ function MilkYield() {
                   </tr>
                 ))
               ) : (
-                <tr><td colSpan={7} style={{ textAlign: 'center', padding: 20 }}>No milk logs recorded yet.</td></tr>
+                <tr><td colSpan={7} style={{ textAlign: 'center', padding: 20, color: 'var(--ink-500)' }}>{lang === 'हिंदी' ? 'अभी तक कोई दूध लॉग दर्ज नहीं हुआ' : 'No milk logs recorded yet.'}</td></tr>
               )}
             </tbody>
           </table>
@@ -1920,7 +1928,15 @@ function Reports() {
     a.click()
   }
 
-  const list = reports.length > 0 ? reports : mockReports
+  // Filter by selected tab: 'Sample Reports' vs 'Batch Reports'
+  const isSampleTab = tab === 'Sample Reports' || tab.toLowerCase().includes('sample')
+  const allReports = reports.length > 0 ? reports : mockReports
+  const list = allReports.filter(r => {
+    const typeStr = String(r.type || '').toLowerCase()
+    const refTypeStr = String(r.refType || '').toLowerCase()
+    const isBatch = typeStr.includes('batch') || refTypeStr.includes('batch') || String(r.ref || '').startsWith('SILAGE-') || String(r.ref || '').startsWith('FEED-')
+    return isSampleTab ? !isBatch : isBatch
+  })
 
   return (
     <div className="page">
@@ -1952,25 +1968,33 @@ function Reports() {
             <tr><th>{t.reportIdCol}</th><th>{t.typeCol}</th><th>{t.dateCol}</th><th>{t.refSampleBatchId}</th><th>{t.summaryCol}</th><th>{t.actionCol}</th></tr>
           </thead>
           <tbody>
-            {list.map(r => (
-              <tr key={r.id}>
-                <td><b>{r.id}</b></td>
-                <td>{locTerm(r.type)}</td>
-                <td>{r.date || (lang === 'हिंदी' ? '22 मई 2026, 10:30 AM' : '22 May 2026, 10:30 AM')}</td>
-                <td><b>{r.ref || 'SF-2026-1256'}</b></td>
-                <td><small style={{ color: 'var(--ink-700)' }}>{r.summary ? r.summary.slice(0, 75) + '...' : (lang === 'हिंदी' ? 'सत्यापित गुणवत्ता पैरामीटर' : 'Verified quality parameters')}</small></td>
-                <td>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <button className="button secondary sm" onClick={() => exportReportCSV(r)}>
-                      <Download size={13}/> CSV
-                    </button>
-                    <button className="button secondary sm" onClick={() => window.print()}>
-                      {t.printPdf}
-                    </button>
-                  </div>
+            {list.length > 0 ? (
+              list.map(r => (
+                <tr key={r.id}>
+                  <td><b>{r.id}</b></td>
+                  <td>{locTerm(r.type)}</td>
+                  <td>{r.date || (lang === 'हिंदी' ? '22 मई 2026, 10:30 AM' : '22 May 2026, 10:30 AM')}</td>
+                  <td><b>{r.ref || 'SF-2026-1256'}</b></td>
+                  <td><small style={{ color: 'var(--ink-700)' }}>{r.summary ? r.summary.slice(0, 75) + '...' : (lang === 'हिंदी' ? 'सत्यापित गुणवत्ता पैरामीटर' : 'Verified quality parameters')}</small></td>
+                  <td>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button className="button secondary sm" onClick={() => exportReportCSV(r)}>
+                        <Download size={13}/> CSV
+                      </button>
+                      <button className="button secondary sm" onClick={() => window.print()}>
+                        {t.printPdf}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={6} style={{ textAlign: 'center', padding: '28px 16px', color: 'var(--ink-500)' }}>
+                  {t.noReports || 'No reports generated yet.'}
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
@@ -2084,15 +2108,43 @@ function SilageCoach() {
 
 /* ─────────────────── SCREEN: ANALYTICS PAGE ─────────────────── */
 function Analytics() {
-  const { t, apiFetch, loc: locTerm } = useApp()
+  const { t, apiFetch, loc: locTerm, lang } = useApp()
+  const isHindi = lang === 'हिंदी'
   const [analytics, setAnalytics] = useState(null)
-  useEffect(() => { apiFetch('/api/analytics').then(setAnalytics).catch(console.error) }, [apiFetch])
+  const [trendRange, setTrendRange] = useState('7 days')
+
+  useEffect(() => {
+    apiFetch('/api/analytics')
+      .then(data => { if (data) setAnalytics(data) })
+      .catch(console.error)
+  }, [apiFetch])
+
+  const total = analytics?.totalTests || 6
+  const good = analytics?.riskDistribution?.Good ?? 4
+  const warning = analytics?.riskDistribution?.Warning ?? 2
+  const bad = analytics?.riskDistribution?.Bad ?? 0
+  const avgScore = analytics?.averageScore ?? 81
+  const activeBatches = analytics?.activeBatches ?? 5
+
+  const trendArr = analytics?.trendData?.[trendRange] || (trendRange === '7 days' ? [87, 82, 76, 68, 81] : trendRange === '30 days' ? [72, 78, 75, 82, 76, 87, 81] : [64, 72, 68, 78, 74, 82, 87, 81, 76])
+  const svgW = 480, svgH = 160, padL = 40, padR = 20, padT = 20, padB = 25
+  const chartW = svgW - padL - padR
+  const chartH = svgH - padT - padB
+  const minV = Math.max(0, Math.min(...trendArr) - 8)
+  const maxV = Math.min(100, Math.max(...trendArr) + 5)
+  const tx = (i) => padL + (i / Math.max(1, trendArr.length - 1)) * chartW
+  const ty = (v) => padT + chartH - ((v - minV) / (maxV - minV || 1)) * chartH
+  const polyPts = trendArr.map((v, i) => `${tx(i)},${ty(v)}`).join(' ')
+
+  const feedDistribution = analytics?.feedTypeDistribution && Object.keys(analytics.feedTypeDistribution).length > 0
+    ? analytics.feedTypeDistribution
+    : { 'Maize Silage': 3, 'Cattle Feed Pellet': 1, 'Grass Silage': 1, 'Dairy Concentrate': 1 }
 
   return (
     <div className="page">
       <div className="page-heading">
         <div>
-          <h1>{t.analytics}</h1>
+          <h1>{t.analyticsTitle || t.analytics}</h1>
           <p>{t.analyticsSubtitle}</p>
         </div>
       </div>
@@ -2100,29 +2152,104 @@ function Analytics() {
       <div className="dashboard-stat-grid" style={{ marginBottom: 20 }}>
         <div className="stat-metric-card">
           <small>{t.totalAssessedBatches}</small>
-          <div className="stat-metric-value-row"><b>{analytics?.activeBatches || 5}</b></div>
+          <div className="stat-metric-value-row"><b>{activeBatches}</b></div>
         </div>
         <div className="stat-metric-card">
           <small>{t.avgFeedHealthIndex}</small>
-          <div className="stat-metric-value-row"><b>{analytics?.averageScore || 81} / 100</b></div>
+          <div className="stat-metric-value-row"><b>{avgScore} / 100</b></div>
         </div>
         <div className="stat-metric-card">
           <small>{t.safeFeedingRatio}</small>
-          <div className="stat-metric-value-row"><b style={{ color: '#16a34a' }}>{Math.round(((analytics?.riskDistribution?.Good || 4) / (analytics?.totalTests || 6)) * 100)}%</b></div>
+          <div className="stat-metric-value-row">
+            <b style={{ color: '#16a34a' }}>{total > 0 ? Math.round((good / total) * 100) : 100}%</b>
+          </div>
+        </div>
+        <div className="stat-metric-card">
+          <small>{t.totalAnalyses}</small>
+          <div className="stat-metric-value-row"><b>{total}</b></div>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 20, marginBottom: 20 }}>
+        {/* Historical Quality Telemetry Trend */}
+        <div className="card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <b>{t.qualityTrend}</b>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {['7 days', '30 days', '90 days'].map(r => (
+                <button
+                  key={r}
+                  className={`button ${trendRange === r ? 'primary sm' : 'secondary sm'}`}
+                  style={{ fontSize: 11, padding: '4px 8px' }}
+                  onClick={() => setTrendRange(r)}
+                >
+                  {isHindi ? (r === '7 days' ? '7 दिन' : r === '30 days' ? '30 दिन' : '90 दिन') : r}
+                </button>
+              ))}
+            </div>
+          </div>
+          <svg viewBox={`0 0 ${svgW} ${svgH}`} style={{ width: '100%', height: 'auto', display: 'block' }}>
+            <line x1={padL} y1={padT} x2={padL + chartW} y2={padT} stroke="var(--border-light)" strokeDasharray="3 3"/>
+            <line x1={padL} y1={padT + chartH / 2} x2={padL + chartW} y2={padT + chartH / 2} stroke="var(--border-light)" strokeDasharray="3 3"/>
+            <line x1={padL} y1={padT + chartH} x2={padL + chartW} y2={padT + chartH} stroke="var(--border-light)"/>
+            <polyline fill="none" stroke="var(--brand-primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" points={polyPts}/>
+            {trendArr.map((v, i) => (
+              <g key={i}>
+                <circle cx={tx(i)} cy={ty(v)} r="4" fill="#fff" stroke="var(--brand-primary)" strokeWidth="2.5"/>
+                <text x={tx(i)} y={ty(v) - 8} textAnchor="middle" fontSize="10" fill="var(--ink-700)" fontWeight="600">{v}</text>
+              </g>
+            ))}
+          </svg>
+        </div>
+
+        {/* Quality Risk Breakdown */}
+        <div className="card">
+          <b style={{ display: 'block', fontSize: 14, marginBottom: 16 }}>{t.riskDistribution}</b>
+          <div style={{ display: 'grid', gap: 14 }}>
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, marginBottom: 4 }}>
+                <span style={{ color: '#16a34a', fontWeight: 600 }}>● {t.goodQuality}</span>
+                <b>{good} ({total > 0 ? Math.round((good / total) * 100) : 0}%)</b>
+              </div>
+              <div style={{ width: '100%', height: 7, background: '#e2e8f0', borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{ width: `${total > 0 ? (good / total) * 100 : 0}%`, height: '100%', background: '#16a34a', borderRadius: 4 }}/>
+              </div>
+            </div>
+
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, marginBottom: 4 }}>
+                <span style={{ color: '#d97706', fontWeight: 600 }}>● {t.caution}</span>
+                <b>{warning} ({total > 0 ? Math.round((warning / total) * 100) : 0}%)</b>
+              </div>
+              <div style={{ width: '100%', height: 7, background: '#e2e8f0', borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{ width: `${total > 0 ? (warning / total) * 100 : 0}%`, height: '100%', background: '#d97706', borderRadius: 4 }}/>
+              </div>
+            </div>
+
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, marginBottom: 4 }}>
+                <span style={{ color: '#dc2626', fontWeight: 600 }}>● {t.highRisk}</span>
+                <b>{bad} ({total > 0 ? Math.round((bad / total) * 100) : 0}%)</b>
+              </div>
+              <div style={{ width: '100%', height: 7, background: '#e2e8f0', borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{ width: `${total > 0 ? (bad / total) * 100 : 0}%`, height: '100%', background: '#dc2626', borderRadius: 4 }}/>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       <div className="card">
         <b style={{ display: 'block', fontSize: 14, marginBottom: 12 }}>{t.feedTypeDistribution}</b>
-        <div style={{ display: 'grid', gap: 10 }}>
-          {Object.entries(analytics?.feedTypeDistribution || { 'Maize Silage': 3, 'Cattle Feed Pellet': 1, 'Grass Silage': 1, 'Dairy Concentrate': 1 }).map(([ft, count]) => (
+        <div style={{ display: 'grid', gap: 12 }}>
+          {Object.entries(feedDistribution).map(([ft, count]) => (
             <div key={ft}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, marginBottom: 4 }}>
                 <span>{locTerm(ft)}</span>
-                <b>{count} {lang === 'हिंदी' ? 'नमूने' : 'samples'}</b>
+                <b>{count} {isHindi ? 'नमूने' : 'samples'}</b>
               </div>
-              <div style={{ width: '100%', height: 6, background: '#e2e8f0', borderRadius: 3, overflow: 'hidden' }}>
-                <div style={{ width: `${(count / (analytics?.totalTests || 6)) * 100}%`, height: '100%', background: '#16a34a' }}/>
+              <div style={{ width: '100%', height: 7, background: '#e2e8f0', borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{ width: `${total > 0 ? (count / total) * 100 : 0}%`, height: '100%', background: 'var(--brand-primary)', borderRadius: 4 }}/>
               </div>
             </div>
           ))}
@@ -2134,8 +2261,53 @@ function Analytics() {
 
 /* ─────────────────── SCREEN: PROFILE & SETTINGS ─────────────────── */
 function Profile() {
-  const { t, user, lang } = useApp()
+  const { t, user, setUser, updateUser, lang, toast, apiFetch } = useApp()
   const isHindi = lang === 'हिंदी'
+
+  const [name, setName]       = useState(user?.name     || (isHindi ? 'किसान राज' : 'Farmer Raj'))
+  const [phone, setPhone]     = useState(user?.phone    || '+91 98765 43210')
+  const [location, setLoc]    = useState(user?.location || (isHindi ? 'आनंद, गुजरात' : 'Anand, Gujarat'))
+  const [herdSize, setHerd]   = useState(user?.cattleCount || 24)
+  const [saving, setSaving]   = useState(false)
+
+  // Keep state in sync if user changes
+  useEffect(() => {
+    if (user) {
+      if (user.name) setName(user.name)
+      if (user.phone) setPhone(user.phone)
+      if (user.location) setLoc(user.location)
+      if (user.cattleCount) setHerd(user.cattleCount)
+    }
+  }, [user])
+
+  const handleSave = async (e) => {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      const payload = { name: name.trim(), phone: phone.trim(), location: location.trim(), cattleCount: Number(herdSize) || 10 }
+      // Persist to backend
+      await apiFetch('/api/auth/profile', {
+        method: 'PUT',
+        body: JSON.stringify(payload)
+      }).catch((err) => {
+        console.warn('Backend profile PUT error (continuing with local update):', err)
+      })
+      // Always update local user state + context + localStorage
+      if (updateUser) {
+        updateUser(payload)
+      } else {
+        const updated = { ...(user || {}), ...payload }
+        setUser(updated)
+        localStorage.setItem('smartfeed_user', JSON.stringify(updated))
+      }
+      toast(isHindi ? 'प्रोफ़ाइल सहेजी गई ✓' : 'Profile saved successfully ✓', 'success')
+    } catch (err) {
+      toast(err.message, 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <div className="page">
       <div className="page-heading">
@@ -2143,24 +2315,38 @@ function Profile() {
       </div>
       <div className="card" style={{ maxWidth: 600 }}>
         <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 20 }}>
-          <div className="topbar-avatar" style={{ width: 56, height: 56, fontSize: 20 }}>{user?.name ? user.name[0] : 'R'}</div>
+          <div className="topbar-avatar" style={{ width: 56, height: 56, fontSize: 20 }}>{name ? name[0].toUpperCase() : 'R'}</div>
           <div>
-            <b style={{ fontSize: 18 }}>{user?.name || (isHindi ? 'किसान राज' : 'Farmer Raj')}</b>
-            <small style={{ display: 'block', color: 'var(--ink-500)' }}>{user?.email || 'raj@farm.com'} · {user?.location || (isHindi ? 'आनंद, गुजरात' : 'Anand, Gujarat')}</small>
+            <b style={{ fontSize: 18 }}>{name}</b>
+            <small style={{ display: 'block', color: 'var(--ink-500)' }}>{user?.email || 'raj@farm.com'} · {location}</small>
           </div>
         </div>
-        <div className="form-field-group">
-          <label className="field-label">{t.fullName}<input className="field-input" defaultValue={user?.name || (isHindi ? 'किसान राज' : 'Farmer Raj')}/></label>
-          <label className="field-label">{t.phone}<input className="field-input" defaultValue={user?.phone || '+91 98765 43210'}/></label>
-        </div>
-        <div className="form-field-group">
-          <label className="field-label">{t.location}<input className="field-input" defaultValue={user?.location || (isHindi ? 'आनंद, गुजरात' : 'Anand, Gujarat')}/></label>
-          <label className="field-label">{t.dairyHerdSize}<input className="field-input" defaultValue="24"/></label>
-        </div>
+        <form onSubmit={handleSave}>
+          <div className="form-field-group">
+            <label className="field-label">{t.fullName}
+              <input className="field-input" value={name} onChange={e => setName(e.target.value)}/>
+            </label>
+            <label className="field-label">{t.phone}
+              <input className="field-input" value={phone} onChange={e => setPhone(e.target.value)}/>
+            </label>
+          </div>
+          <div className="form-field-group" style={{ marginBottom: 20 }}>
+            <label className="field-label">{t.location}
+              <input className="field-input" value={location} onChange={e => setLoc(e.target.value)}/>
+            </label>
+            <label className="field-label">{t.dairyHerdSize}
+              <input type="number" className="field-input" value={herdSize} onChange={e => setHerd(e.target.value)}/>
+            </label>
+          </div>
+          <button type="submit" className="button primary full" disabled={saving}>
+            {saving ? <><RefreshCw size={14} className="spin"/> {isHindi ? 'सहेज रहे हैं...' : 'Saving...'}</> : (isHindi ? '💾 प्रोफ़ाइल सहेजें' : '💾 Save Profile')}
+          </button>
+        </form>
       </div>
     </div>
   )
 }
+
 
 function SettingsPage() {
   const { t, settings, setSetting, lang, switchLang } = useApp()

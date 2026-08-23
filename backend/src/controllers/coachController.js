@@ -1,6 +1,7 @@
 import mongoose from 'mongoose'
 import SilageCoachStep from '../models/SilageCoachStep.js'
 import { isDbConnected } from '../config/db.js'
+import { memoryStore } from '../utils/memoryStore.js'
 
 const DEFAULT_STAGES = [
   {
@@ -61,6 +62,20 @@ const DEFAULT_STAGES = [
   }
 ]
 
+if (!memoryStore.silageCoachSteps) {
+  memoryStore.silageCoachSteps = DEFAULT_STAGES.map(s => ({
+    farmerId: '664f1a2b3c4d5e6f7a8b9c01',
+    batchId: 'SILAGE-001',
+    stageNumber: s.stageNumber,
+    stageKey: s.stageKey,
+    title: s.title,
+    completed: false,
+    checkedItems: [],
+    notes: '',
+    photoUrl: ''
+  }))
+}
+
 export async function getCoachSteps(req, res, next) {
   try {
     const farmerId = req.farmerId
@@ -87,7 +102,22 @@ export async function getCoachSteps(req, res, next) {
 
       return res.json({ stages: DEFAULT_STAGES, steps })
     } else {
-      return res.json({ stages: DEFAULT_STAGES, steps: DEFAULT_STAGES.map(s => ({ ...s, completed: false, checkedItems: [], notes: '', photoUrl: '' })) })
+      let steps = memoryStore.silageCoachSteps.filter(s => s.batchId === batchId)
+      if (!steps || steps.length === 0) {
+        steps = DEFAULT_STAGES.map(s => ({
+          farmerId,
+          batchId,
+          stageNumber: s.stageNumber,
+          stageKey: s.stageKey,
+          title: s.title,
+          completed: false,
+          checkedItems: [],
+          notes: '',
+          photoUrl: ''
+        }))
+        memoryStore.silageCoachSteps.push(...steps)
+      }
+      return res.json({ stages: DEFAULT_STAGES, steps })
     }
   } catch (err) {
     next(err)
@@ -116,16 +146,27 @@ export async function updateCoachStep(req, res, next) {
       )
       return res.json(step)
     } else {
-      return res.json({
-        farmerId,
-        batchId,
-        stageNumber,
-        completed: Boolean(completed),
-        checkedItems,
-        notes,
-        photoUrl,
-        updatedAt: new Date()
-      })
+      let step = memoryStore.silageCoachSteps.find(s => s.batchId === batchId && s.stageNumber === stageNumber)
+      if (step) {
+        step.completed = Boolean(completed)
+        step.checkedItems = checkedItems
+        step.notes = notes
+        if (photoUrl) step.photoUrl = photoUrl
+        step.updatedAt = new Date()
+      } else {
+        step = {
+          farmerId,
+          batchId,
+          stageNumber,
+          completed: Boolean(completed),
+          checkedItems,
+          notes,
+          photoUrl,
+          updatedAt: new Date()
+        }
+        memoryStore.silageCoachSteps.push(step)
+      }
+      return res.json(step)
     }
   } catch (err) {
     next(err)
