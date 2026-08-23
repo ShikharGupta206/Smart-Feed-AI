@@ -1128,21 +1128,27 @@ textarea.field-input {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.5);
-  backdrop-filter: blur(4px);
-  display: grid;
-  place-items: center;
-  z-index: 100;
-  padding: 16px;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(5px);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  z-index: 1000;
+  padding: 24px 16px;
+  overflow-y: auto;
 }
 .modal-box {
   background: #ffffff;
   border-radius: var(--radius-lg);
   width: 100%;
   max-width: 480px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.18);
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 45px rgba(0,0,0,0.22);
   border: 1px solid var(--border-card);
   overflow: hidden;
+  margin: 0 auto;
   animation: modalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 @keyframes modalPop {
@@ -1150,11 +1156,16 @@ textarea.field-input {
   to { opacity: 1; transform: scale(1); }
 }
 .modal-header {
-  padding: 18px 22px;
+  padding: 16px 22px;
   border-bottom: 1px solid var(--border-light);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  background: #ffffff;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  flex-shrink: 0;
 }
 .modal-header h3 {
   font-size: 16px;
@@ -1163,55 +1174,184 @@ textarea.field-input {
 }
 .modal-body {
   padding: 22px;
+  overflow-y: auto;
+  flex: 1;
 }
 
 /* ─────────────────────────────────────────────
-   DARK MODE OVERRIDES (PREMIUM SLEEK DARK)
+   UNIVERSAL DARK MODE OVERRIDES (100% DARK BOXES - NO WHITE BOXES)
 ───────────────────────────────────────────── */
 html.dark, .dark-root {
-  --bg-canvas: #091a11;
-  --bg-surface: #0e271a;
-  --bg-muted: #133323;
-  --border-light: #183d2a;
-  --border-card: #1b4530;
-  --ink-900: #f1f8f3;
-  --ink-700: #cfe4d6;
-  --ink-500: #88be9a;
-  --forest-sidebar: #05140c;
+  --bg-canvas: #06150c;
+  --bg-surface: #0a2015;
+  --bg-muted: #0e291b;
+  --border-light: #143522;
+  --border-card: #173b27;
+  --ink-900: #f8fafc;
+  --ink-800: #e2e8f0;
+  --ink-700: #cbd5e1;
+  --ink-500: #94a3b8;
+  --forest-sidebar: #030d07;
 }
 
 .dark-root body, html.dark body {
-  background: var(--bg-canvas);
-  color: var(--ink-900);
+  background: var(--bg-canvas) !important;
+  color: #f8fafc !important;
 }
 
+/* Force dark surface background on ALL container cards, modals, tables, and panels */
+html.dark .card, html.dark .stat-metric-card, html.dark .topbar, html.dark .table-container, html.dark .data-table, html.dark .data-table tr, html.dark .modal-box, html.dark .modal-body, html.dark .modal-header, html.dark .print-certificate-body, html.dark .chat-window-card, html.dark .chat-message-area, html.dark .chat-input-area, html.dark .upload-dropzone, html.dark .suggestion-item, html.dark .score-display-card, html.dark .print-btn-bar,
 .dark-root .card,
 .dark-root .stat-metric-card,
 .dark-root .topbar,
 .dark-root .table-container,
-.dark-root .modal-box {
+.dark-root .data-table,
+.dark-root .data-table tr,
+.dark-root .modal-box,
+.dark-root .modal-body,
+.dark-root .modal-header,
+.dark-root .print-certificate-body,
+.dark-root .chat-window-card,
+.dark-root .chat-message-area,
+.dark-root .chat-input-area,
+.dark-root .upload-dropzone,
+.dark-root .suggestion-item,
+.dark-root .score-display-card,
+.dark-root .print-btn-bar {
   background: var(--bg-surface) !important;
+  background-color: var(--bg-surface) !important;
   border-color: var(--border-card) !important;
-  color: var(--ink-900) !important;
+  color: #f8fafc !important;
 }
 
-.dark-root .data-table th {
-  background: #0b2216;
-  border-color: var(--border-card);
-  color: var(--ink-500);
-}
-.dark-root .data-table td {
-  border-color: var(--border-card);
-  color: var(--ink-700);
+/* Preserve distinct badge and button colors in Dark Mode */
+html.dark .button.primary, html.dark button.primary,
+.dark-root .button.primary,
+.dark-root button.primary {
+  background: #16a34a !important;
+  background-color: #16a34a !important;
+  color: #ffffff !important;
+  border: none !important;
 }
 
+html.dark .button.secondary, html.dark button.secondary,
+.dark-root .button.secondary,
+.dark-root button.secondary {
+  background: #143522 !important;
+  background-color: #143522 !important;
+  color: #e2e8f0 !important;
+  border-color: #19402a !important;
+}
+
+html.dark .badge.good, .dark-root .badge.good {
+  background: #14532d !important;
+  color: #86efac !important;
+  border-color: #22c55e !important;
+}
+
+html.dark .badge.caution, .dark-root .badge.caution {
+  background: #78350f !important;
+  color: #fde68a !important;
+  border-color: #f59e0b !important;
+}
+
+html.dark .badge.bad, .dark-root .badge.bad {
+  background: #7f1d1d !important;
+  color: #fca5a5 !important;
+  border-color: #ef4444 !important;
+}
+
+/* Dark Mode Inputs and Select Options */
+html.dark .field-input, html.dark input, html.dark select, html.dark textarea, html.dark option,
 .dark-root .field-input,
 .dark-root input,
 .dark-root select,
-.dark-root textarea {
-  background: #0b2216 !important;
-  border-color: var(--border-card) !important;
+.dark-root textarea,
+.dark-root option {
+  background: #081a11 !important;
+  background-color: #081a11 !important;
+  border-color: #173b27 !important;
   color: #ffffff !important;
+}
+
+/* Universal Text Visibility in Dark Mode */
+html.dark p, html.dark label, html.dark .field-label, html.dark span:not(.badge), html.dark b, html.dark strong, html.dark small, html.dark td, html.dark th, html.dark li, html.dark h1, html.dark h2, html.dark h3, html.dark h4, html.dark h5, html.dark h6,
+.dark-root p,
+.dark-root label,
+.dark-root .field-label,
+.dark-root span:not(.badge),
+.dark-root b,
+.dark-root strong,
+.dark-root small,
+.dark-root td,
+.dark-root th,
+.dark-root li,
+.dark-root h1,
+.dark-root h2,
+.dark-root h3,
+.dark-root h4,
+.dark-root h5,
+.dark-root h6 {
+  color: #f8fafc !important;
+}
+
+html.dark [style*="color: var(--ink-900)"], html.dark [style*="color: var(--ink-800)"], html.dark [style*="color: var(--ink-700)"], html.dark [style*="color: #0f172a"], html.dark [style*="color: #1e293b"], html.dark [style*="color: #334155"], html.dark [style*="color: #475569"], html.dark [style*="color: #64748b"],
+.dark-root [style*="color: var(--ink-900)"],
+.dark-root [style*="color: var(--ink-800)"],
+.dark-root [style*="color: var(--ink-700)"],
+.dark-root [style*="color: #0f172a"],
+.dark-root [style*="color: #1e293b"],
+.dark-root [style*="color: #334155"],
+.dark-root [style*="color: #475569"],
+.dark-root [style*="color: #64748b"] {
+  color: #cbd5e1 !important;
+}
+
+html.dark [style*="color: var(--ink-500)"], .dark-root [style*="color: var(--ink-500)"] {
+  color: #94a3b8 !important;
+}
+
+/* AI Assistant Chat Bubbles Dark Mode */
+.dark-root .chat-message-row.bot {
+  background: #0e301d !important;
+  border: 1px solid #1b4530 !important;
+  color: #f1f8f3 !important;
+}
+
+.dark-root .chat-message-row.user {
+  background: #15803d !important;
+  color: #ffffff !important;
+}
+
+.dark-root .bot-markdown {
+  color: #e2e8f0 !important;
+}
+
+.dark-root .bot-markdown h1,
+.dark-root .bot-markdown h2,
+.dark-root .bot-markdown h3,
+.dark-root .bot-markdown h4,
+.dark-root .bot-markdown b,
+.dark-root .bot-markdown strong {
+  color: #ffffff !important;
+}
+
+.dark-root .bot-markdown p,
+.dark-root .bot-markdown li,
+.dark-root .bot-markdown td,
+.dark-root .bot-markdown span {
+  color: #e2e8f0 !important;
+}
+
+.dark-root .bot-markdown code {
+  background: #091a11 !important;
+  color: #86efac !important;
+}
+
+.dark-root .bot-markdown blockquote {
+  background: #113623 !important;
+  border-left-color: #22c55e !important;
+  color: #cbd5e1 !important;
 }
 
 /* ─────────────────────────────────────────────
@@ -1316,4 +1456,83 @@ html.dark, .dark-root {
 /* First child no top margin */
 .bot-markdown > *:first-child { margin-top: 0; }
 .bot-markdown > *:last-child  { margin-bottom: 0; }
+
+/* ─────────────────────────────────────────────
+   PRINT STYLES FOR CLEAN PDF EXPORT
+───────────────────────────────────────────── */
+@media print {
+  /* Hide all non-printable navigation bars, headers, sidebars, and action buttons */
+  .sidebar,
+  .topbar,
+  .button,
+  button,
+  .lang-chip-btn,
+  .no-print,
+  .topbar-right,
+  .sidebar-brand,
+  .sidebar-nav-list,
+  .sidebar-support-card,
+  .sidebar-lang-toggle,
+  .modal-header,
+  .modal-header button {
+    display: none !important;
+  }
+
+  /* Reset main viewport for print */
+  body, html {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .main {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    box-shadow: none !important;
+  }
+
+  .page {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .table-container,
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #cbd5e1 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    break-inside: avoid;
+  }
+
+  /* Dedicated Printable Certificate Modal Styling */
+  .modal-backdrop.printable-modal {
+    position: static !important;
+    background: #ffffff !important;
+    padding: 0 !important;
+    display: block !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .modal-backdrop.printable-modal .modal-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: 2px solid #16a34a !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .print-certificate-body {
+    padding: 20px !important;
+  }
+}
+
 
