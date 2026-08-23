@@ -364,6 +364,13 @@ const PRIORITY_CFG = {
   medium: { label: 'Medium Priority', bg: '#fffbeb', border: '#fde68a', text: '#d97706', icon: '🟡' },
   low:    { label: 'Low Priority',    bg: '#f0fdf4', border: '#bbf7d0', text: '#16a34a', icon: '🟢' },
 }
+
+const PRIORITY_CFG_DARK = {
+  high:   { label: 'High Priority',   bg: '#2e0f15', border: '#ef4444', text: '#fca5a5', icon: '🔴' },
+  medium: { label: 'Medium Priority', bg: '#2b1b08', border: '#f59e0b', text: '#fde68a', icon: '🟡' },
+  low:    { label: 'Low Priority',    bg: '#092516', border: '#22c55e', text: '#86efac', icon: '🟢' },
+}
+
 const CATEGORY_COLOR = {
   Fermentation: '#8b5cf6', Nutrition: '#0ea5e9', Storage: '#f59e0b',
   'Milk Yield': '#ec4899', 'Cost Saving': '#16a34a'
@@ -378,9 +385,11 @@ const REGIONAL_DATA = {
 
 function SmartSuggestionsCard({ suggestions, onRefresh, loading }) {
   const navigate = useNavigate()
-  const { t, lang, loc: locTerm } = useApp()
+  const { t, lang, loc: locTerm, settings } = useApp()
+  const isDark = Boolean(settings?.darkMode)
   const [showAll, setShowAll] = useState(false)
   const top3 = suggestions.slice(0, 3)
+  const priConfig = isDark ? PRIORITY_CFG_DARK : PRIORITY_CFG
 
   return (
     <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -409,21 +418,21 @@ function SmartSuggestionsCard({ suggestions, onRefresh, loading }) {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
           {top3.map((s, idx) => {
-            const pri = PRIORITY_CFG[s.priority] || PRIORITY_CFG.medium
+            const pri = priConfig[s.priority] || priConfig.medium
             const catColor = CATEGORY_COLOR[s.category] || '#64748b'
             return (
               <div key={s.id || idx} style={{
                 padding: '14px 20px', borderBottom: idx < top3.length - 1 ? '1px solid var(--border-light)' : 'none',
-                borderLeft: `3px solid ${pri.border}`, background: pri.bg, transition: '0.15s'
+                borderLeft: `4px solid ${pri.border}`, background: pri.bg, transition: '0.15s'
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
                       <span style={{ fontSize: 11 }}>{pri.icon}</span>
-                      <b style={{ fontSize: 13, color: 'var(--ink-900)' }}>{s.title}</b>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: catColor, background: catColor + '18', borderRadius: 4, padding: '1px 6px' }}>{locTerm(s.category)}</span>
+                      <b style={{ fontSize: 13, color: isDark ? '#ffffff' : 'var(--ink-900)' }}>{s.title}</b>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: isDark ? '#ffffff' : catColor, background: isDark ? catColor + '40' : catColor + '18', border: isDark ? `1px solid ${catColor}88` : 'none', borderRadius: 4, padding: '1px 6px' }}>{locTerm(s.category)}</span>
                     </div>
-                    <p style={{ fontSize: 12, color: 'var(--ink-600)', margin: 0, lineHeight: 1.55 }}>{s.description}</p>
+                    <p style={{ fontSize: 12, color: isDark ? '#e2e8f0' : 'var(--ink-600)', margin: 0, lineHeight: 1.55 }}>{s.description}</p>
                   </div>
                   <button
                     className="button primary sm"
@@ -444,21 +453,21 @@ function SmartSuggestionsCard({ suggestions, onRefresh, loading }) {
           <div className="modal-box" style={{ maxWidth: 600, maxHeight: '80vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <b style={{ fontSize: 16 }}>{t.allSuggestionsModal}</b>
-              <button onClick={() => setShowAll(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={18}/></button>
+              <button onClick={() => setShowAll(false)} className="button secondary sm" style={{ padding: '4px 8px' }}><X size={14}/></button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {suggestions.map((s, idx) => {
-                const pri = PRIORITY_CFG[s.priority] || PRIORITY_CFG.medium
+                const pri = priConfig[s.priority] || priConfig.medium
                 const catColor = CATEGORY_COLOR[s.category] || '#64748b'
                 return (
                   <div key={s.id || idx} style={{ padding: 14, borderRadius: 10, background: pri.bg, border: `1px solid ${pri.border}` }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, flexWrap: 'wrap' }}>
                       <span>{pri.icon}</span>
-                      <b style={{ fontSize: 13 }}>{s.title}</b>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: catColor, background: catColor + '18', borderRadius: 4, padding: '1px 6px' }}>{locTerm(s.category)}</span>
+                      <b style={{ fontSize: 13, color: isDark ? '#ffffff' : 'var(--ink-900)' }}>{s.title}</b>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: isDark ? '#ffffff' : catColor, background: isDark ? catColor + '40' : catColor + '18', border: isDark ? `1px solid ${catColor}88` : 'none', borderRadius: 4, padding: '1px 6px' }}>{locTerm(s.category)}</span>
                       <span style={{ fontSize: 10, fontWeight: 700, color: pri.text, marginLeft: 'auto' }}>{pri.label}</span>
                     </div>
-                    <p style={{ fontSize: 12, color: 'var(--ink-600)', margin: '0 0 10px' }}>{s.description}</p>
+                    <p style={{ fontSize: 12, color: isDark ? '#e2e8f0' : 'var(--ink-600)', margin: '0 0 10px' }}>{s.description}</p>
                     <button className="button primary sm" onClick={() => { navigate(s.actionLink || '/dashboard'); setShowAll(false) }}>
                       {s.actionLabel || t.takeAction} <ArrowUpRight size={11}/>
                     </button>

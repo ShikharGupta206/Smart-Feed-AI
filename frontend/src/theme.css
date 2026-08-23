@@ -1179,182 +1179,6 @@ textarea.field-input {
 }
 
 /* ─────────────────────────────────────────────
-   UNIVERSAL DARK MODE OVERRIDES (100% DARK BOXES - NO WHITE BOXES)
-───────────────────────────────────────────── */
-html.dark, .dark-root {
-  --bg-canvas: #06150c;
-  --bg-surface: #0a2015;
-  --bg-muted: #0e291b;
-  --border-light: #143522;
-  --border-card: #173b27;
-  --ink-900: #f8fafc;
-  --ink-800: #e2e8f0;
-  --ink-700: #cbd5e1;
-  --ink-500: #94a3b8;
-  --forest-sidebar: #030d07;
-}
-
-.dark-root body, html.dark body {
-  background: var(--bg-canvas) !important;
-  color: #f8fafc !important;
-}
-
-/* Force dark surface background on ALL container cards, modals, tables, and panels */
-html.dark .card, html.dark .stat-metric-card, html.dark .topbar, html.dark .table-container, html.dark .data-table, html.dark .data-table tr, html.dark .modal-box, html.dark .modal-body, html.dark .modal-header, html.dark .print-certificate-body, html.dark .chat-window-card, html.dark .chat-message-area, html.dark .chat-input-area, html.dark .upload-dropzone, html.dark .suggestion-item, html.dark .score-display-card, html.dark .print-btn-bar,
-.dark-root .card,
-.dark-root .stat-metric-card,
-.dark-root .topbar,
-.dark-root .table-container,
-.dark-root .data-table,
-.dark-root .data-table tr,
-.dark-root .modal-box,
-.dark-root .modal-body,
-.dark-root .modal-header,
-.dark-root .print-certificate-body,
-.dark-root .chat-window-card,
-.dark-root .chat-message-area,
-.dark-root .chat-input-area,
-.dark-root .upload-dropzone,
-.dark-root .suggestion-item,
-.dark-root .score-display-card,
-.dark-root .print-btn-bar {
-  background: var(--bg-surface) !important;
-  background-color: var(--bg-surface) !important;
-  border-color: var(--border-card) !important;
-  color: #f8fafc !important;
-}
-
-/* Preserve distinct badge and button colors in Dark Mode */
-html.dark .button.primary, html.dark button.primary,
-.dark-root .button.primary,
-.dark-root button.primary {
-  background: #16a34a !important;
-  background-color: #16a34a !important;
-  color: #ffffff !important;
-  border: none !important;
-}
-
-html.dark .button.secondary, html.dark button.secondary,
-.dark-root .button.secondary,
-.dark-root button.secondary {
-  background: #143522 !important;
-  background-color: #143522 !important;
-  color: #e2e8f0 !important;
-  border-color: #19402a !important;
-}
-
-html.dark .badge.good, .dark-root .badge.good {
-  background: #14532d !important;
-  color: #86efac !important;
-  border-color: #22c55e !important;
-}
-
-html.dark .badge.caution, .dark-root .badge.caution {
-  background: #78350f !important;
-  color: #fde68a !important;
-  border-color: #f59e0b !important;
-}
-
-html.dark .badge.bad, .dark-root .badge.bad {
-  background: #7f1d1d !important;
-  color: #fca5a5 !important;
-  border-color: #ef4444 !important;
-}
-
-/* Dark Mode Inputs and Select Options */
-html.dark .field-input, html.dark input, html.dark select, html.dark textarea, html.dark option,
-.dark-root .field-input,
-.dark-root input,
-.dark-root select,
-.dark-root textarea,
-.dark-root option {
-  background: #081a11 !important;
-  background-color: #081a11 !important;
-  border-color: #173b27 !important;
-  color: #ffffff !important;
-}
-
-/* Universal Text Visibility in Dark Mode */
-html.dark p, html.dark label, html.dark .field-label, html.dark span:not(.badge), html.dark b, html.dark strong, html.dark small, html.dark td, html.dark th, html.dark li, html.dark h1, html.dark h2, html.dark h3, html.dark h4, html.dark h5, html.dark h6,
-.dark-root p,
-.dark-root label,
-.dark-root .field-label,
-.dark-root span:not(.badge),
-.dark-root b,
-.dark-root strong,
-.dark-root small,
-.dark-root td,
-.dark-root th,
-.dark-root li,
-.dark-root h1,
-.dark-root h2,
-.dark-root h3,
-.dark-root h4,
-.dark-root h5,
-.dark-root h6 {
-  color: #f8fafc !important;
-}
-
-html.dark [style*="color: var(--ink-900)"], html.dark [style*="color: var(--ink-800)"], html.dark [style*="color: var(--ink-700)"], html.dark [style*="color: #0f172a"], html.dark [style*="color: #1e293b"], html.dark [style*="color: #334155"], html.dark [style*="color: #475569"], html.dark [style*="color: #64748b"],
-.dark-root [style*="color: var(--ink-900)"],
-.dark-root [style*="color: var(--ink-800)"],
-.dark-root [style*="color: var(--ink-700)"],
-.dark-root [style*="color: #0f172a"],
-.dark-root [style*="color: #1e293b"],
-.dark-root [style*="color: #334155"],
-.dark-root [style*="color: #475569"],
-.dark-root [style*="color: #64748b"] {
-  color: #cbd5e1 !important;
-}
-
-html.dark [style*="color: var(--ink-500)"], .dark-root [style*="color: var(--ink-500)"] {
-  color: #94a3b8 !important;
-}
-
-/* AI Assistant Chat Bubbles Dark Mode */
-.dark-root .chat-message-row.bot {
-  background: #0e301d !important;
-  border: 1px solid #1b4530 !important;
-  color: #f1f8f3 !important;
-}
-
-.dark-root .chat-message-row.user {
-  background: #15803d !important;
-  color: #ffffff !important;
-}
-
-.dark-root .bot-markdown {
-  color: #e2e8f0 !important;
-}
-
-.dark-root .bot-markdown h1,
-.dark-root .bot-markdown h2,
-.dark-root .bot-markdown h3,
-.dark-root .bot-markdown h4,
-.dark-root .bot-markdown b,
-.dark-root .bot-markdown strong {
-  color: #ffffff !important;
-}
-
-.dark-root .bot-markdown p,
-.dark-root .bot-markdown li,
-.dark-root .bot-markdown td,
-.dark-root .bot-markdown span {
-  color: #e2e8f0 !important;
-}
-
-.dark-root .bot-markdown code {
-  background: #091a11 !important;
-  color: #86efac !important;
-}
-
-.dark-root .bot-markdown blockquote {
-  background: #113623 !important;
-  border-left-color: #22c55e !important;
-  color: #cbd5e1 !important;
-}
-
-/* ─────────────────────────────────────────────
    MARKDOWN RENDERING: AI ASSISTANT CHAT BUBBLES
 ───────────────────────────────────────────── */
 .bot-markdown {
@@ -1453,9 +1277,431 @@ html.dark [style*="color: var(--ink-500)"], .dark-root [style*="color: var(--ink
   font-size: 12.5px;
 }
 
-/* First child no top margin */
 .bot-markdown > *:first-child { margin-top: 0; }
 .bot-markdown > *:last-child  { margin-bottom: 0; }
+
+/* ─────────────────────────────────────────────
+   UNIVERSAL DARK MODE OVERRIDES (100% DARK BOXES - NO WHITE BOXES)
+───────────────────────────────────────────── */
+html.dark, .dark-root {
+  --bg-canvas: #06150c;
+  --bg-surface: #0a2015;
+  --bg-muted: #0e291b;
+  --border-light: #143522;
+  --border-card: #173b27;
+  --ink-900: #f8fafc;
+  --ink-800: #e2e8f0;
+  --ink-700: #cbd5e1;
+  --ink-500: #94a3b8;
+  --ink-400: #64748b;
+  --forest-sidebar: #030d07;
+}
+
+.dark-root body, html.dark body {
+  background: var(--bg-canvas) !important;
+  color: #f8fafc !important;
+}
+
+/* Force dark surface background on ALL container cards, modals, tables, and panels */
+html.dark .card, html.dark .stat-metric-card, html.dark .topbar, html.dark .table-container, html.dark .data-table, html.dark .modal-box, html.dark .modal-body, html.dark .modal-header, html.dark .print-certificate-body, html.dark .chat-window-card, html.dark .chat-message-area, html.dark .chat-input-area, html.dark .upload-dropzone, html.dark .suggestion-item, html.dark .score-display-card, html.dark .print-btn-bar, html.dark .landing-ribbon,
+.dark-root .card,
+.dark-root .stat-metric-card,
+.dark-root .topbar,
+.dark-root .table-container,
+.dark-root .data-table,
+.dark-root .modal-box,
+.dark-root .modal-body,
+.dark-root .modal-header,
+.dark-root .print-certificate-body,
+.dark-root .chat-window-card,
+.dark-root .chat-message-area,
+.dark-root .chat-input-area,
+.dark-root .upload-dropzone,
+.dark-root .suggestion-item,
+.dark-root .score-display-card,
+.dark-root .print-btn-bar,
+.dark-root .landing-ribbon {
+  background: var(--bg-surface) !important;
+  background-color: var(--bg-surface) !important;
+  border-color: var(--border-card) !important;
+  color: #f8fafc !important;
+}
+
+/* Map inline light backgrounds to dark surface backgrounds in Dark Mode */
+html.dark [style*="background: #ffffff"], html.dark [style*="background: rgb(255, 255, 255)"],
+.dark-root [style*="background: #ffffff"], .dark-root [style*="background: rgb(255, 255, 255)"] {
+  background: var(--bg-surface) !important;
+  background-color: var(--bg-surface) !important;
+}
+
+html.dark [style*="background: #f8fafc"], html.dark [style*="background: #f1f5f9"], html.dark [style*="background: #f8faf9"],
+.dark-root [style*="background: #f8fafc"], .dark-root [style*="background: #f1f5f9"], .dark-root [style*="background: #f8faf9"] {
+  background: #0e291b !important;
+  background-color: #0e291b !important;
+}
+
+/* Table styling & HOVER in Dark Mode (High Contrast & Visible) */
+html.dark .data-table, .dark-root .data-table {
+  background: var(--bg-surface) !important;
+  color: #f8fafc !important;
+}
+
+html.dark .data-table th, .dark-root .data-table th {
+  background: #081a11 !important;
+  color: #cbd5e1 !important;
+  border-bottom: 1px solid #173b27 !important;
+}
+
+html.dark .data-table td, .dark-root .data-table td {
+  border-bottom: 1px solid #143522 !important;
+  color: #e2e8f0 !important;
+}
+
+html.dark .data-table tr:hover td,
+.dark-root .data-table tr:hover td {
+  background: #0f331f !important;
+  background-color: #0f331f !important;
+  color: #ffffff !important;
+}
+
+html.dark .data-table tr:hover td *,
+.dark-root .data-table tr:hover td * {
+  color: #ffffff !important;
+}
+
+html.dark .data-table tr:hover td small,
+.dark-root .data-table tr:hover td small {
+  color: #cbd5e1 !important;
+}
+
+/* Primary Button in Dark Mode */
+html.dark .button.primary, html.dark button.primary,
+.dark-root .button.primary,
+.dark-root button.primary {
+  background: #16a34a !important;
+  background-color: #16a34a !important;
+  color: #ffffff !important;
+  border: 1px solid #16a34a !important;
+  box-shadow: 0 2px 10px rgba(22, 163, 74, 0.3) !important;
+}
+
+html.dark .button.primary:hover, html.dark button.primary:hover,
+.dark-root .button.primary:hover,
+.dark-root button.primary:hover {
+  background: #15803d !important;
+  background-color: #15803d !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.45) !important;
+}
+
+/* Secondary Button in Dark Mode */
+html.dark .button.secondary, html.dark button.secondary,
+.dark-root .button.secondary,
+.dark-root button.secondary {
+  background: #143522 !important;
+  background-color: #143522 !important;
+  color: #f1f5f9 !important;
+  border: 1px solid #19402a !important;
+}
+
+html.dark .button.secondary:hover, html.dark button.secondary:hover,
+.dark-root .button.secondary:hover,
+.dark-root button.secondary:hover {
+  background: #1b4d31 !important;
+  background-color: #1b4d31 !important;
+  color: #ffffff !important;
+  border-color: #22c55e !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+}
+
+html.dark .button.secondary:hover *, html.dark button.secondary:hover *,
+.dark-root .button.secondary:hover *,
+.dark-root button.secondary:hover * {
+  color: #ffffff !important;
+}
+
+/* Status Badges in Dark Mode */
+html.dark .badge.good, .dark-root .badge.good {
+  background: #14532d !important;
+  color: #86efac !important;
+  border-color: #22c55e !important;
+}
+
+html.dark .badge.caution, .dark-root .badge.caution {
+  background: #78350f !important;
+  color: #fde68a !important;
+  border-color: #f59e0b !important;
+}
+
+html.dark .badge.bad, html.dark .badge.high,
+.dark-root .badge.bad, .dark-root .badge.high {
+  background: #7f1d1d !important;
+  color: #fca5a5 !important;
+  border-color: #ef4444 !important;
+}
+
+/* Quick Prompt & Filter Chips */
+html.dark .chip-btn, .dark-root .chip-btn {
+  background: #0b2216 !important;
+  background-color: #0b2216 !important;
+  border-color: #1b4530 !important;
+  color: #cbd5e1 !important;
+}
+
+html.dark .chip-btn:hover, .dark-root .chip-btn:hover {
+  background: #15452a !important;
+  background-color: #15452a !important;
+  border-color: #22c55e !important;
+  color: #86efac !important;
+}
+
+html.dark .chip-btn.active, .dark-root .chip-btn.active {
+  background: #16a34a !important;
+  background-color: #16a34a !important;
+  color: #ffffff !important;
+  border-color: #22c55e !important;
+}
+
+/* Upload Dropzone in Dark Mode */
+html.dark .upload-dropzone, .dark-root .upload-dropzone {
+  background: #07190f !important;
+  border-color: #173b27 !important;
+  color: #e2e8f0 !important;
+}
+
+html.dark .upload-dropzone:hover, .dark-root .upload-dropzone:hover {
+  background: #0c2919 !important;
+  border-color: #22c55e !important;
+  color: #ffffff !important;
+}
+
+html.dark .upload-dropzone:hover *, .dark-root .upload-dropzone:hover * {
+  color: #ffffff !important;
+}
+
+html.dark .upload-cloud-icon, .dark-root .upload-cloud-icon {
+  background: #0e3520 !important;
+  color: #4ade80 !important;
+}
+
+/* Dark Mode Inputs, Select Options, and Textareas */
+html.dark .field-input, html.dark input, html.dark select, html.dark textarea, html.dark option,
+.dark-root .field-input,
+.dark-root input,
+.dark-root select,
+.dark-root textarea,
+.dark-root option {
+  background: #081a11 !important;
+  background-color: #081a11 !important;
+  border-color: #173b27 !important;
+  color: #ffffff !important;
+}
+
+html.dark .field-input:hover, .dark-root .field-input:hover,
+html.dark input:hover, .dark-root input:hover,
+html.dark select:hover, .dark-root select:hover,
+html.dark textarea:hover, .dark-root textarea:hover {
+  border-color: #22c55e !important;
+}
+
+html.dark .field-input:focus, .dark-root .field-input:focus,
+html.dark input:focus, .dark-root input:focus,
+html.dark select:focus, .dark-root select:focus,
+html.dark textarea:focus, .dark-root textarea:focus {
+  border-color: #22c55e !important;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25) !important;
+}
+
+/* Topbar & Sidebar Interactions */
+html.dark .topbar-date-badge, .dark-root .topbar-date-badge {
+  background: #0b2216 !important;
+  border-color: #173b27 !important;
+  color: #cbd5e1 !important;
+}
+
+html.dark .topbar-user-pill:hover, .dark-root .topbar-user-pill:hover {
+  background: #113622 !important;
+}
+
+html.dark .topbar-icon-btn, .dark-root .topbar-icon-btn {
+  background: #0b2216 !important;
+  border-color: #173b27 !important;
+  color: #cbd5e1 !important;
+}
+
+html.dark .topbar-icon-btn:hover, .dark-root .topbar-icon-btn:hover {
+  background: #143d25 !important;
+  border-color: #22c55e !important;
+  color: #86efac !important;
+}
+
+html.dark .sidebar-link:hover, .dark-root .sidebar-link:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+}
+
+html.dark .sidebar-link:hover svg, .dark-root .sidebar-link:hover svg {
+  color: #86efac !important;
+}
+
+html.dark .sidebar-support-card:hover, .dark-root .sidebar-support-card:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+html.dark .lang-chip-btn:hover, .dark-root .lang-chip-btn:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+/* Cards & Hover States */
+html.dark .card:hover, .dark-root .card:hover {
+  border-color: #1f4d33 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45) !important;
+}
+
+html.dark .stat-metric-card:hover, .dark-root .stat-metric-card:hover {
+  border-color: #22c55e44 !important;
+}
+
+/* Interactive Rows & Steps */
+html.dark .card div[style*="cursor: pointer"]:hover,
+.dark-root .card div[style*="cursor: pointer"]:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-radius: 6px;
+}
+
+html.dark .card div[style*="cursor: pointer"]:hover span,
+.dark-root .card div[style*="cursor: pointer"]:hover span {
+  color: #ffffff !important;
+}
+
+/* AI Assistant Chat Elements */
+html.dark .chat-scroll-area, .dark-root .chat-scroll-area {
+  background: #07190f !important;
+}
+
+html.dark .chat-input-toolbar, .dark-root .chat-input-toolbar {
+  background: #0a2015 !important;
+  border-color: #173b27 !important;
+}
+
+html.dark .chat-bar-inner input, .dark-root .chat-bar-inner input {
+  background: #07190f !important;
+  border-color: #173b27 !important;
+  color: #ffffff !important;
+}
+
+/* Universal Text Visibility in Dark Mode */
+html.dark p, html.dark label, html.dark .field-label, html.dark span:not(.badge), html.dark b, html.dark strong, html.dark small, html.dark td, html.dark th, html.dark li, html.dark h1, html.dark h2, html.dark h3, html.dark h4, html.dark h5, html.dark h6,
+.dark-root p,
+.dark-root label,
+.dark-root .field-label,
+.dark-root span:not(.badge),
+.dark-root b,
+.dark-root strong,
+.dark-root small,
+.dark-root td,
+.dark-root th,
+.dark-root li,
+.dark-root h1,
+.dark-root h2,
+.dark-root h3,
+.dark-root h4,
+.dark-root h5,
+.dark-root h6 {
+  color: #f8fafc !important;
+}
+
+html.dark [style*="color: var(--ink-900)"], html.dark [style*="color: var(--ink-800)"], html.dark [style*="color: var(--ink-700)"], html.dark [style*="color: #0f172a"], html.dark [style*="color: #1e293b"], html.dark [style*="color: #334155"], html.dark [style*="color: #475569"], html.dark [style*="color: #64748b"],
+.dark-root [style*="color: var(--ink-900)"],
+.dark-root [style*="color: var(--ink-800)"],
+.dark-root [style*="color: var(--ink-700)"],
+.dark-root [style*="color: #0f172a"],
+.dark-root [style*="color: #1e293b"],
+.dark-root [style*="color: #334155"],
+.dark-root [style*="color: #475569"],
+.dark-root [style*="color: #64748b"] {
+  color: #cbd5e1 !important;
+}
+
+html.dark [style*="color: var(--ink-500)"], .dark-root [style*="color: var(--ink-500)"] {
+  color: #94a3b8 !important;
+}
+
+/* AI Assistant Chat Bubbles Dark Mode */
+html.dark .chat-message-row.bot,
+.dark-root .chat-message-row.bot {
+  background: transparent !important;
+  color: #f1f8f3 !important;
+}
+
+html.dark .chat-message-row.bot .chat-message-bubble,
+.dark-root .chat-message-row.bot .chat-message-bubble {
+  background: #0d281a !important;
+  background-color: #0d281a !important;
+  border: 1px solid #1c4d32 !important;
+  color: #f8fafc !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+}
+
+html.dark .chat-message-row.user .chat-message-bubble,
+.dark-root .chat-message-row.user .chat-message-bubble {
+  background: #16a34a !important;
+  background-color: #16a34a !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.35) !important;
+}
+
+html.dark .chat-message-row.user .chat-message-bubble span,
+.dark-root .chat-message-row.user .chat-message-bubble span {
+  color: #ffffff !important;
+}
+
+html.dark .bot-markdown,
+.dark-root .bot-markdown {
+  color: #f8fafc !important;
+}
+
+html.dark .bot-markdown h1, html.dark .bot-markdown h2, html.dark .bot-markdown h3, html.dark .bot-markdown h4,
+.dark-root .bot-markdown h1, .dark-root .bot-markdown h2, .dark-root .bot-markdown h3, .dark-root .bot-markdown h4 {
+  color: #86efac !important;
+  font-weight: 700 !important;
+}
+
+html.dark .bot-markdown b, html.dark .bot-markdown strong,
+.dark-root .bot-markdown b, .dark-root .bot-markdown strong {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+html.dark .bot-markdown p, html.dark .bot-markdown li, html.dark .bot-markdown td, html.dark .bot-markdown span,
+.dark-root .bot-markdown p, .dark-root .bot-markdown li, .dark-root .bot-markdown td, .dark-root .bot-markdown span {
+  color: #f1f5f9 !important;
+  line-height: 1.65 !important;
+}
+
+html.dark .bot-markdown code,
+.dark-root .bot-markdown code {
+  background: #06170e !important;
+  color: #86efac !important;
+  border: 1px solid #143823 !important;
+}
+
+html.dark .bot-markdown pre,
+.dark-root .bot-markdown pre {
+  background: #06170e !important;
+  border: 1px solid #143823 !important;
+  color: #86efac !important;
+}
+
+html.dark .bot-markdown blockquote,
+.dark-root .bot-markdown blockquote {
+  background: #113623 !important;
+  border-left-color: #22c55e !important;
+  color: #cbd5e1 !important;
+}
 
 /* ─────────────────────────────────────────────
    PRINT STYLES FOR CLEAN PDF EXPORT
