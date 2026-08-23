@@ -2548,16 +2548,21 @@ function SilageCoach() {
     try {
       const saved = localStorage.getItem('smartfeed_silage_steps')
       return saved ? JSON.parse(saved) : [
-        { stageNumber: 1, completed: true, checkedItems: defaultStages[0].checklist },
-        { stageNumber: 2, completed: true, checkedItems: defaultStages[1].checklist }
+        { stageNumber: 1, completed: true, checkedItems: [0, 1, 2] },
+        { stageNumber: 2, completed: true, checkedItems: [0, 1, 2] }
       ]
     } catch (e) {
       return [
-        { stageNumber: 1, completed: true, checkedItems: defaultStages[0].checklist },
-        { stageNumber: 2, completed: true, checkedItems: defaultStages[1].checklist }
+        { stageNumber: 1, completed: true, checkedItems: [0, 1, 2] },
+        { stageNumber: 2, completed: true, checkedItems: [0, 1, 2] }
       ]
     }
   })
+
+  // Synchronize stages when language changes
+  useEffect(() => {
+    setStages(isHindi ? DEFAULT_SILAGE_STAGES_HI : DEFAULT_SILAGE_STAGES_EN)
+  }, [isHindi])
 
   const saveStepsLocal = (newSteps) => {
     setSteps(newSteps)
@@ -2580,12 +2585,15 @@ function SilageCoach() {
 
   useEffect(() => { load() }, [load])
 
-  const toggle = async (stageNum, item) => {
+  const toggle = async (stageNum, itemIndex, itemText) => {
     const step = steps.find(s => s.stageNumber === stageNum) || {}
     const checked = step.checkedItems || []
-    const next = checked.includes(item) ? checked.filter(x => x !== item) : [...checked, item]
+    const isAlreadyChecked = checked.includes(itemIndex) || checked.includes(itemText)
+    const next = isAlreadyChecked 
+      ? checked.filter(x => x !== itemIndex && x !== itemText) 
+      : [...checked, itemIndex]
     const def = stages.find(s => s.stageNumber === stageNum) || {}
-    const isCompleted = next.length === (def?.checklist?.length || 3)
+    const isCompleted = next.length >= (def?.checklist?.length || 3)
 
     try {
       await apiFetch(`/api/silage-coach/stage/${stageNum}`, {
@@ -2643,9 +2651,9 @@ function SilageCoach() {
               <p style={{ fontSize: 12.5, color: 'var(--ink-500)', marginBottom: 12 }}>{stage.desc}</p>
               <div style={{ display: 'grid', gap: 6 }}>
                 {stage.checklist.map((c, i) => {
-                  const isChecked = (step.checkedItems || []).includes(c)
+                  const isChecked = (step.checkedItems || []).includes(i) || (step.checkedItems || []).includes(c)
                   return (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, cursor: 'pointer' }} onClick={() => toggle(stage.stageNumber, c)}>
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, cursor: 'pointer' }} onClick={() => toggle(stage.stageNumber, i, c)}>
                       {isChecked ? <CheckSquare size={16} color="#16a34a"/> : <Square size={16} color="#94a3b8"/>}
                       <span style={{ textDecoration: isChecked ? 'line-through' : 'none' }}>{c}</span>
                     </div>

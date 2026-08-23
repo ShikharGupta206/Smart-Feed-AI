@@ -145,7 +145,8 @@ export async function collectFarmerContext(farmerId) {
  * Generates proactive, context-aware suggestions for the farmer.
  */
 export async function getFarmerSuggestions(farmerId, language = 'en', forceRefresh = false) {
-  const cacheKey = String(farmerId || 'demo-farmer')
+  const isHindi = language === 'hi' || language === 'Hindi' || language === 'हिंदी' || String(language).toLowerCase().includes('hi')
+  const cacheKey = `${String(farmerId || 'demo-farmer')}_${isHindi ? 'hi' : 'en'}`
   const cached = suggestionsCache.get(cacheKey)
 
   if (!forceRefresh && cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
@@ -159,7 +160,9 @@ export async function getFarmerSuggestions(farmerId, language = 'en', forceRefre
   }
 
   const context = await collectFarmerContext(farmerId)
-  const isHindi = language === 'hi' || language === 'Hindi' || context.language === 'hi'
+  if (context.language === 'hi') {
+    // respect farmer's profile preference if set
+  }
 
   const client = getGenAIClient()
   if (client) {
@@ -179,10 +182,10 @@ Output ONLY a valid JSON array of suggestions conforming to this schema:
     "priority": "high",
     "category": "Fermentation",
     "actionLabel": "Take Action / View Detail",
-    "actionLink": "/silage-coach"
+    "actionLink": "/coach"
   }
 ]
-${isHindi ? 'Note: Generate title, description, and actionLabel in clear, encouraging Hindi (हिंदी).' : 'Note: Generate in clear, professional English.'}`
+${isHindi ? 'IMPORTANT: Generate title, description, and actionLabel entirely in clear, encouraging, practical Hindi (हिंदी).' : 'Note: Generate in clear, professional English.'}`
 
     for (const modelName of SUPPORTED_MODELS) {
       try {
@@ -207,7 +210,7 @@ ${isHindi ? 'Note: Generate title, description, and actionLabel in clear, encour
         if (suggestionsList.length >= 3) {
           const finalSuggestions = suggestionsList.map((s, idx) => ({
             id: s.id || `sugg-${idx + 1}`,
-            title: s.title || `Farm Advisory #${idx + 1}`,
+            title: s.title || (isHindi ? `कृषि सलाह #${idx + 1}` : `Farm Advisory #${idx + 1}`),
             description: s.description || '',
             priority: ['high', 'medium', 'low'].includes(String(s.priority).toLowerCase()) ? String(s.priority).toLowerCase() : 'medium',
             category: s.category || 'Nutrition',

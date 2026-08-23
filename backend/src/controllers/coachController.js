@@ -62,6 +62,64 @@ const DEFAULT_STAGES = [
   }
 ]
 
+const DEFAULT_STAGES_HI = [
+  {
+    stageNumber: 1,
+    stageKey: 'harvesting',
+    title: 'चरण 1: कटाई और दाना प्रसंस्करण (Harvest & Chopping)',
+    desc: 'मक्के को मिल्क लाइन अवस्था (30-35% शुष्क पदार्थ) पर 8-12 मिमी के टुकड़ों में काटें।',
+    checklist: [
+      'मक्के की कटाई तब करें जब दाने 1/2 से 2/3 मिल्क लाइन अवस्था में हों',
+      'इष्टतम दबाव के लिए 8-12 मिमी काटने की लंबाई बनाए रखें',
+      'दाना प्रसंस्करण की जांच करें (सभी दाने पीसे हुए होने चाहिए)'
+    ]
+  },
+  {
+    stageNumber: 2,
+    stageKey: 'chopping',
+    title: 'चरण 2: पिट रोलिंग और इनोकुलेंट स्प्रे',
+    desc: 'ऑक्सीजन निकालने के लिए 15 सेमी की पतली परतों में भारी रोलर से दबाएं।',
+    checklist: [
+      'कटे हुए चारे को 15 सेमी की पतली परतों में बिछाएं',
+      'भारी ट्रैक्टर से रोलिंग करें (कम से कम 5 मिनट प्रति टन चारा)',
+      'लैक्टिक एसिड बैक्टीरिया (LAB) इनोकुलेंट का छिड़काव करें'
+    ]
+  },
+  {
+    stageNumber: 3,
+    stageKey: 'inoculation',
+    title: 'चरण 3: एयर-टाइट प्लास्टिक सीलिंग (Plastic Sealing)',
+    desc: 'पिट को यूवी-प्रतिरोधी प्लास्टिक और टायरों/मिट्टी के वजन से ढकें।',
+    checklist: [
+      'अंतिम रोलिंग के 12 घंटे के भीतर पिट को ढक दें',
+      '200-माइक्रॉन यूवी प्रतिरोधी प्लास्टिक शीट का प्रयोग करें',
+      'हवा के रिसाव को रोकने के लिए प्लास्टिक पर टायर/बोरे रखें'
+    ]
+  },
+  {
+    stageNumber: 4,
+    stageKey: 'compaction',
+    title: 'चरण 4: किण्वन चरण (45 दिन भंडारण)',
+    desc: 'अवायवीय किण्वन द्वारा पीएच < 4.2 तक लाने और पोषक तत्व सुरक्षित करने दें।',
+    checklist: [
+      'प्लास्टिक में छेद की साप्ताहिक जांच करें',
+      'पिट को खोलने से पहले कम से कम 45 दिन बंद रखें',
+      'बारिश के पानी को पिट के पास इकट्ठा न होने दें'
+    ]
+  },
+  {
+    stageNumber: 5,
+    stageKey: 'sealing',
+    title: 'चरण 5: दैनिक कटाई एवं फेस प्रबंधन',
+    desc: 'हवा के संपर्क से बचने के लिए दैनिक रूप से सीधी कटाई करें।',
+    checklist: [
+      'पिट फेस को सीधा और साफ काटने के लिए कटर का उपयोग करें',
+      'सर्दियों में 15 सेमी और गर्मियों में 20 सेमी प्रतिदिन निकालें',
+      'दैनिक चारा निकालने के बाद प्लास्टिक को वापस कसकर ढकें'
+    ]
+  }
+]
+
 if (!memoryStore.silageCoachSteps) {
   memoryStore.silageCoachSteps = DEFAULT_STAGES.map(s => ({
     farmerId: '664f1a2b3c4d5e6f7a8b9c01',
@@ -80,13 +138,16 @@ export async function getCoachSteps(req, res, next) {
   try {
     const farmerId = req.farmerId
     const batchId = req.query.batchId || 'SILAGE-001'
+    const lang = req.query.lang || req.headers['accept-language'] || 'en'
+    const isHi = lang === 'hi' || lang === 'Hindi' || lang === 'हिंदी' || String(lang).toLowerCase().includes('hi')
+    const activeStages = isHi ? DEFAULT_STAGES_HI : DEFAULT_STAGES
 
     if (isDbConnected()) {
       let steps = await SilageCoachStep.find({ farmerId, batchId }).sort({ stageNumber: 1 })
       
       // Seed if not yet created for this batch
       if (!steps || steps.length === 0) {
-        const toInsert = DEFAULT_STAGES.map(s => ({
+        const toInsert = activeStages.map(s => ({
           farmerId,
           batchId,
           stageNumber: s.stageNumber,
@@ -100,11 +161,11 @@ export async function getCoachSteps(req, res, next) {
         steps = await SilageCoachStep.insertMany(toInsert)
       }
 
-      return res.json({ stages: DEFAULT_STAGES, steps })
+      return res.json({ stages: activeStages, steps })
     } else {
       let steps = memoryStore.silageCoachSteps.filter(s => s.batchId === batchId)
       if (!steps || steps.length === 0) {
-        steps = DEFAULT_STAGES.map(s => ({
+        steps = activeStages.map(s => ({
           farmerId,
           batchId,
           stageNumber: s.stageNumber,
@@ -117,7 +178,7 @@ export async function getCoachSteps(req, res, next) {
         }))
         memoryStore.silageCoachSteps.push(...steps)
       }
-      return res.json({ stages: DEFAULT_STAGES, steps })
+      return res.json({ stages: activeStages, steps })
     }
   } catch (err) {
     next(err)
