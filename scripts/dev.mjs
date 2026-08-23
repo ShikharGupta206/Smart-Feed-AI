@@ -8,7 +8,7 @@ const rootDir = path.resolve(__dirname, '..')
 console.log('🚀 Starting SmartFeed AI MERN Stack...')
 
 // Start Backend
-const backend = spawn('npm', ['start'], {
+const backend = spawn('npm', ['run', 'dev'], {
   cwd: path.join(rootDir, 'backend'),
   stdio: 'inherit',
   shell: true
