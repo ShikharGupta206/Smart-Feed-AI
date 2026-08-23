@@ -10,6 +10,7 @@ import assistantRoutes from './routes/assistantRoutes.js'
 import analyticsRoutes from './routes/analyticsRoutes.js'
 import coachRoutes from './routes/coachRoutes.js'
 import milkYieldRoutes from './routes/milkYieldRoutes.js'
+import personalizationRoutes from './routes/personalizationRoutes.js'
 import { getTestQR } from './controllers/testController.js'
 import { generateAdvisoriesForParameters } from './utils/mockParameters.js'
 import { authMiddleware } from './middlewares/auth.js'
@@ -44,7 +45,7 @@ app.get('/api/health', (req, res) => {
     version: '2.0.0',
     database: isDbConnected() ? 'mongodb' : 'memory-demo',
     geminiKeyConfigured: Boolean(process.env.GEMINI_API_KEY),
-    geminiActiveModel: 'gemini-3.6-flash',
+    geminiActiveModel: 'gemini-3.5-flash',
     uptimeSeconds: Math.floor(process.uptime()),
     timestamp: new Date().toISOString()
   })
@@ -69,6 +70,7 @@ app.use('/api/assistant', assistantRoutes)
 app.use('/api/analytics', analyticsRoutes)
 app.use('/api/silage-coach', coachRoutes)
 app.use('/api/milk-yield', milkYieldRoutes)
+app.use('/api/suggestions', personalizationRoutes)
 
 // 404 & Error Handlers
 app.use(notFoundHandler)

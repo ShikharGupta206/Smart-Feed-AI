@@ -98,11 +98,15 @@ async function runTests() {
     if (!data.id && !data._id) throw new Error('Test ID missing')
     if (typeof data.score !== 'number') throw new Error('Score missing or invalid')
     if (!data.confidenceInterval) throw new Error('confidenceInterval missing')
+    if (typeof data.confidence !== 'number') throw new Error('confidence missing')
+    if (data.confidence < data.confidenceInterval.min || data.confidence > data.confidenceInterval.max) {
+      throw new Error(`Confidence point estimate (${data.confidence}%) must fall within stated CI range (${data.confidenceInterval.min}-${data.confidenceInterval.max}%)`)
+    }
     if (!data.mycotoxinRiskRadar) throw new Error('mycotoxinRiskRadar missing')
     if (!data.costOfPoorQuality) throw new Error('costOfPoorQuality missing')
     if (!data.disclaimer) throw new Error('disclaimer missing')
     testSampleId = data.id || data._id
-    console.log(`(Score: ${data.score}, Conf Range: ${data.confidenceInterval.min}-${data.confidenceInterval.max}, Radar Tier: ${data.mycotoxinRiskRadar.overallRiskTier})`)
+    console.log(`(Score: ${data.score}, Confidence: ${data.confidence}%, Conf Range: ${data.confidenceInterval.min}-${data.confidenceInterval.max}%, Model: ${data.aiModelUsed || 'gemini'})`)
   })
 
   // 6. Silage Coaching Checklist & Photo Verification

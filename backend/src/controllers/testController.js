@@ -6,6 +6,7 @@ import Report from '../models/Report.js'
 import { isDbConnected } from '../config/db.js'
 import { memoryStore } from '../utils/memoryStore.js'
 import { analyzeFeedImage, generateReportSummary } from '../services/geminiService.js'
+import { invalidateSuggestionsCache } from '../services/personalizationService.js'
 import { generateTestQRCode } from '../services/qrService.js'
 
 function generateSampleId() {
@@ -70,19 +71,25 @@ export async function createTest(req, res, next) {
       imageName,
       image: image || null,
       analyzedOn,
-      score: aiAnalysis.score || 80,
+      score: typeof aiAnalysis.score === 'number' ? aiAnalysis.score : 80,
       overallStatus: aiAnalysis.overallStatus || 'Good',
-      confidence: aiAnalysis.confidence || 92,
-      confidenceInterval: aiAnalysis.confidenceInterval || {
-        min: Math.max(0, (aiAnalysis.score || 80) - 4),
-        max: Math.min(100, (aiAnalysis.score || 80) + 4)
-      },
+      confidence: typeof aiAnalysis.confidence === 'number' ? aiAnalysis.confidence : 91,
+      confidenceInterval: (aiAnalysis.confidenceInterval &&
+        typeof aiAnalysis.confidenceInterval.min === 'number' &&
+        typeof aiAnalysis.confidenceInterval.max === 'number' &&
+        aiAnalysis.confidenceInterval.min <= (aiAnalysis.confidence || 91) &&
+        aiAnalysis.confidenceInterval.max >= (aiAnalysis.confidence || 91))
+        ? aiAnalysis.confidenceInterval
+        : {
+            min: Math.max(0, (aiAnalysis.confidence || 91) - 4),
+            max: Math.min(100, (aiAnalysis.confidence || 91) + 4)
+          },
       aiExplanation: aiAnalysis.aiExplanation || '',
       heatmapRegions: aiAnalysis.heatmapRegions || [],
       mycotoxinRiskRadar: aiAnalysis.mycotoxinRiskRadar || {},
       costOfPoorQuality: aiAnalysis.costOfPoorQuality || {},
       disclaimer: aiAnalysis.disclaimer || 'Screening estimate for management decision support. Not a regulatory laboratory assay.',
-      aiModelUsed: aiAnalysis.aiModelUsed || 'gemini-3.6-flash',
+      aiModelUsed: aiAnalysis.aiModelUsed || 'gemini-3.5-flash',
       parameters: aiAnalysis.parameters,
       keyIndicators: aiAnalysis.keyIndicators || [],
       advisories: aiAnalysis.advisories || [],
@@ -134,10 +141,14 @@ export async function createTest(req, res, next) {
         metrics: { score: newTest.score, overallStatus: newTest.overallStatus }
       })
 
+      // Invalidate suggestions cache so Dashboard refreshes proactively
+      invalidateSuggestionsCache(farmerId)
+
       return res.status(201).json(savedTest)
     } else {
       // Memory store
       memoryStore.tests.unshift(newTest)
+      invalidateSuggestionsCache(farmerId)
 
       if (newTest.advisories && newTest.advisories.length > 0) {
         memoryStore.advisories.unshift({

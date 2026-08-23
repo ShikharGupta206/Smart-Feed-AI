@@ -9,20 +9,22 @@ import { chatWithAssistant } from '../services/geminiService.js'
 
 export async function chat(req, res, next) {
   try {
-    const { message, history = [] } = req.body
+    const { message, history = [], language: reqLang } = req.body
     if (!message || !message.trim()) {
       return res.status(400).json({ error: 'Message content is required.' })
     }
 
     const farmerId = req.farmerId
-    let language = 'en'
+    // Use language from request body first (frontend language toggle), fallback to DB/default
+    let language = reqLang === 'हिंदी' ? 'hi' : (reqLang === 'Hindi' ? 'hi' : (reqLang || 'en'))
     let farmerContext = {}
 
     // Fetch rich farmer profile, recent tests, batches, milk yield from MongoDB
     if (isDbConnected()) {
       const farmer = await Farmer.findById(farmerId)
       if (farmer) {
-        language = farmer.language || 'en'
+        // Only use DB language if reqLang was not explicitly provided in the request
+        if (!reqLang) language = farmer.language || 'en'
         farmerContext.farmerName = farmer.name
         farmerContext.cattleCount = farmer.cattleCount
         farmerContext.farmSize = farmer.farmSize
@@ -60,7 +62,8 @@ export async function chat(req, res, next) {
     } else {
       const farmer = memoryStore.farmers.find(f => String(f._id || f.id) === String(farmerId)) || memoryStore.farmers[0]
       if (farmer) {
-        language = farmer.language || 'en'
+        // Only use DB language if reqLang was not explicitly provided in the request
+        if (!reqLang) language = farmer.language || 'en'
         farmerContext.farmerName = farmer.name
         farmerContext.cattleCount = farmer.cattleCount
       }

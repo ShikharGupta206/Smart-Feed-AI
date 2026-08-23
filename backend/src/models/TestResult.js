@@ -34,8 +34,8 @@ const testResultSchema = new mongoose.Schema({
   score: { type: Number, default: 80, min: 0, max: 100 },
   confidence: { type: Number, default: 92 },
   confidenceInterval: {
-    min: { type: Number, default: 78 },
-    max: { type: Number, default: 86 }
+    min: { type: Number, default: 88 },
+    max: { type: Number, default: 96 }
   },
   aiExplanation: { type: String, default: '' },
   heatmapRegions: [heatmapRegionSchema],
@@ -60,7 +60,7 @@ const testResultSchema = new mongoose.Schema({
     estimatedSpoilagePct: { type: Number, default: 0 }
   },
   overallStatus: { type: String, enum: ['Good', 'Warning', 'Bad'], default: 'Good', required: true },
-  aiModelUsed: { type: String, default: 'gemini-3.6-flash' },
+  aiModelUsed: { type: String, default: 'gemini-3.5-flash' },
   parameters: { type: Map, of: parameterSchema, required: true },
   keyIndicators: [{ type: String }],
   advisories: [{ type: String }],
