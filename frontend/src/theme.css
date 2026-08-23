@@ -1440,6 +1440,41 @@ html.dark .badge.bad, html.dark .badge.high,
   border-color: #ef4444 !important;
 }
 
+/* Stat Metric Cards & Deltas in Dark Mode */
+html.dark .stat-metric-card, .dark-root .stat-metric-card {
+  background: #0a2015 !important;
+  border-color: #173b27 !important;
+}
+html.dark .stat-metric-card small, .dark-root .stat-metric-card small {
+  color: #94a3b8 !important;
+}
+html.dark .stat-metric-value-row b, .dark-root .stat-metric-value-row b {
+  color: #ffffff !important;
+}
+html.dark .stat-metric-delta.good, .dark-root .stat-metric-delta.good {
+  color: #86efac !important;
+  background: #092516 !important;
+  border: 1px solid #16a34a55 !important;
+}
+html.dark .stat-metric-delta.caution, .dark-root .stat-metric-delta.caution {
+  color: #fde68a !important;
+  background: #2b1b08 !important;
+  border: 1px solid #f59e0b55 !important;
+}
+html.dark .stat-metric-delta.high, .dark-root .stat-metric-delta.high {
+  color: #fca5a5 !important;
+  background: #2e0f15 !important;
+  border: 1px solid #ef444455 !important;
+}
+
+/* Donut Chart Legend in Dark Mode */
+html.dark .donut-legend-row, .dark-root .donut-legend-row {
+  color: #e2e8f0 !important;
+}
+html.dark .donut-legend-row b, .dark-root .donut-legend-row b {
+  color: #ffffff !important;
+}
+
 /* Quick Prompt & Filter Chips */
 html.dark .chip-btn, .dark-root .chip-btn {
   background: #0b2216 !important;

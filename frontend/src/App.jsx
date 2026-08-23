@@ -484,7 +484,8 @@ function SmartSuggestionsCard({ suggestions, onRefresh, loading }) {
 
 function Dashboard() {
   const navigate = useNavigate()
-  const { t, apiFetch, user, lang, loc: locTerm } = useApp()
+  const { t, apiFetch, user, lang, loc: locTerm, settings } = useApp()
+  const isDark = Boolean(settings?.darkMode)
   const [tests, setTests] = useState([])
   const [analytics, setAnalytics] = useState(null)
   const [suggestions, setSuggestions] = useState([])
@@ -512,7 +513,7 @@ function Dashboard() {
         setSuggestions([
           { id: 'f1', title: isHindi ? 'दैनिक साइलेज फेस जांच' : 'Daily Silage Pit Face Check', description: isHindi ? 'साइलेज फेस से रोजाना 15-20 सेमी परत निकालें और कसकर सील करें।' : 'Remove 15-20 cm evenly daily from the pit face and reseal tightly to prevent aerobic heating.', priority: 'high', category: 'Fermentation', actionLabel: isHindi ? 'विश्लेषण करें' : 'Analyze Sample', actionLink: '/analysis/new' },
           { id: 'f2', title: isHindi ? 'दूध उत्पादन लॉग दर्ज करें' : 'Log Today\'s Milk Production', description: isHindi ? 'नियमित दूध उत्पादन दर्ज करने से चारे की गुणवत्ता से संबंध देखा जा सकता है।' : 'Regular milk yield logging helps correlate feed quality changes with lactation performance.', priority: 'medium', category: 'Milk Yield', actionLabel: isHindi ? 'दूध लॉग करें' : 'Log Yield', actionLink: '/milk-yield' },
-          { id: 'f3', title: isHindi ? 'साइलेज कोच जारी रखें' : 'Continue Silage Coach', description: isHindi ? 'साइलेज निर्माण के सभी चरण पूरे करें।' : 'Complete remaining Silage Coach stages to ensure optimal fermentation practices.', priority: 'low', category: 'Storage', actionLabel: isHindi ? 'कोच देखें' : 'Open Coach', actionLink: '/silage-coach' },
+          { id: 'f3', title: isHindi ? 'साइलेज कोच जारी रखें' : 'Continue Silage Coach', description: isHindi ? 'साइलेज निर्माण के सभी चरण पूरे करें।' : 'Complete remaining Silage Coach stages to ensure optimal fermentation practices.', priority: 'low', category: 'Storage', actionLabel: isHindi ? 'कोच देखें' : 'Open Coach', actionLink: '/coach' },
         ])
       })
   }, [apiFetch, isHindi, lang])
@@ -597,13 +598,13 @@ function Dashboard() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
         {/* Quality Streak */}
         <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px' }}>
-          <div style={{ width: 52, height: 52, borderRadius: 14, background: streak >= 5 ? '#fef3c7' : '#f0fdf4', display: 'grid', placeItems: 'center', fontSize: 26, flexShrink: 0 }}>
+          <div style={{ width: 52, height: 52, borderRadius: 14, background: isDark ? (streak >= 5 ? '#3d280e' : '#092516') : (streak >= 5 ? '#fef3c7' : '#f0fdf4'), display: 'grid', placeItems: 'center', fontSize: 26, flexShrink: 0 }}>
             {streak >= 7 ? '🥇' : streak >= 4 ? '🔥' : '✅'}
           </div>
           <div>
-            <b style={{ fontSize: 22, color: streak >= 5 ? '#d97706' : '#16a34a' }}>{streak}</b>
+            <b style={{ fontSize: 22, color: isDark ? (streak >= 5 ? '#f59e0b' : '#4ade80') : (streak >= 5 ? '#d97706' : '#16a34a') }}>{streak}</b>
             <span style={{ fontSize: 12, color: 'var(--ink-500)', marginLeft: 4 }}>{t.dayQualityStreak}</span>
-            <p style={{ fontSize: 11, color: 'var(--ink-400)', margin: '2px 0 0', lineHeight: 1.4 }}>
+            <p style={{ fontSize: 11, color: isDark ? '#94a3b8' : 'var(--ink-400)', margin: '2px 0 0', lineHeight: 1.4 }}>
               {streak >= 7 ? t.streakGold : streak >= 4 ? t.streakGreat : t.streakMaintain}
             </p>
           </div>
@@ -616,16 +617,16 @@ function Dashboard() {
             <b style={{ fontSize: 13 }}>{t.regionalBenchmark}</b>
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, marginBottom: 6 }}>
-            <span style={{ fontSize: 24, fontWeight: 800, color: isTopPerformer ? '#16a34a' : '#d97706' }}>{avgScore}</span>
+            <span style={{ fontSize: 24, fontWeight: 800, color: isDark ? (isTopPerformer ? '#4ade80' : '#f59e0b') : (isTopPerformer ? '#16a34a' : '#d97706') }}>{avgScore}</span>
             <span style={{ fontSize: 12, color: 'var(--ink-400)', marginBottom: 4 }}>{t.yourScore}</span>
-            <span style={{ fontSize: 16, color: 'var(--ink-300)', marginBottom: 4 }}>vs</span>
-            <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink-500)', marginBottom: 2 }}>{region.avgScore}</span>
+            <span style={{ fontSize: 14, color: isDark ? '#94a3b8' : '#64748b', marginBottom: 4 }}>vs</span>
+            <span style={{ fontSize: 18, fontWeight: 700, color: isDark ? '#cbd5e1' : 'var(--ink-500)', marginBottom: 2 }}>{region.avgScore}</span>
             <span style={{ fontSize: 12, color: 'var(--ink-400)', marginBottom: 4 }}>{t.regionAvg}</span>
           </div>
-          <div style={{ height: 6, background: '#f1f5f9', borderRadius: 4, marginBottom: 6 }}>
-            <div style={{ height: '100%', borderRadius: 4, background: isTopPerformer ? '#16a34a' : '#f59e0b', width: `${Math.min(100, avgScore)}%`, transition: '1s ease' }}/>
+          <div style={{ height: 6, background: isDark ? '#143823' : '#f1f5f9', borderRadius: 4, marginBottom: 6 }}>
+            <div style={{ height: '100%', borderRadius: 4, background: isTopPerformer ? '#22c55e' : '#f59e0b', width: `${Math.min(100, avgScore)}%`, transition: '1s ease' }}/>
           </div>
-          <p style={{ fontSize: 11, color: isTopPerformer ? '#16a34a' : '#d97706', fontWeight: 700, margin: 0 }}>
+          <p style={{ fontSize: 11, color: isDark ? (isTopPerformer ? '#86efac' : '#fde68a') : (isTopPerformer ? '#16a34a' : '#d97706'), fontWeight: 700, margin: 0 }}>
             {isTopPerformer
               ? t.topPercent.replace('{region}', region.regionName).replace('{pct}', region.topPct)
               : t.belowAvg.replace('{pts}', region.avgScore - avgScore)}
@@ -652,7 +653,7 @@ function Dashboard() {
             <svg viewBox={`0 0 ${svgW} ${svgH}`} style={{ width: '100%', height: '100%', overflow: 'visible' }}>
               <defs>
                 <linearGradient id="tg" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#16a34a" stopOpacity="0.2"/>
+                  <stop offset="0%" stopColor="#16a34a" stopOpacity="0.25"/>
                   <stop offset="100%" stopColor="#16a34a" stopOpacity="0"/>
                 </linearGradient>
               </defs>
@@ -660,16 +661,16 @@ function Dashboard() {
                 const y = ty(Math.min(maxV, Math.max(minV, v)))
                 if (y < padT - 2 || y > padT + chartH + 2) return null
                 return <g key={v}>
-                  <line x1={padL} y1={y} x2={svgW - padR} y2={y} stroke="#f1f5f9" strokeWidth="1"/>
-                  <text x={padL - 4} y={y + 4} fill="#94a3b8" fontSize="9" textAnchor="end">{v}</text>
+                  <line x1={padL} y1={y} x2={svgW - padR} y2={y} stroke={isDark ? '#143823' : '#f1f5f9'} strokeWidth="1"/>
+                  <text x={padL - 4} y={y + 4} fill={isDark ? '#94a3b8' : '#94a3b8'} fontSize="9" textAnchor="end">{v}</text>
                 </g>
               })}
               <polygon fill="url(#tg)" points={`${tx(0)},${padT+chartH} ${polyPts} ${tx(trendArr.length-1)},${padT+chartH}`}/>
-              <polyline fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" points={polyPts}/>
+              <polyline fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" points={polyPts}/>
               {trendArr.map((v, i) => (
                 <g key={i}>
-                  <circle cx={tx(i)} cy={ty(v)} r="4" fill="#16a34a" stroke="#fff" strokeWidth="2"/>
-                  <text x={tx(i)} y={ty(v) - 8} fill="#0f172a" fontSize="9" fontWeight="700" textAnchor="middle">{v}</text>
+                  <circle cx={tx(i)} cy={ty(v)} r="4" fill="#22c55e" stroke={isDark ? '#06150c' : '#fff'} strokeWidth="2"/>
+                  <text x={tx(i)} y={ty(v) - 8} fill={isDark ? '#ffffff' : '#0f172a'} fontSize="9" fontWeight="700" textAnchor="middle">{v}</text>
                 </g>
               ))}
             </svg>
@@ -680,14 +681,14 @@ function Dashboard() {
           <div className="card-head" style={{ width: '100%', marginBottom: 8 }}><b>{t.riskDistribution}</b></div>
           <div className="donut-circle-wrap">
             <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
-              <circle cx="50" cy="50" r="38" fill="none" stroke="#fee2e2" strokeWidth="12" strokeDasharray={CIRC} strokeDashoffset="0"/>
-              {cautionPct > 0 && <circle cx="50" cy="50" r="38" fill="none" stroke="#fef3c7" strokeWidth="12" strokeDasharray={CIRC} strokeDashoffset={CIRC * (1 - cautionPct - highPct)}/>}
-              {goodPct > 0 && <circle cx="50" cy="50" r="38" fill="none" stroke="#16a34a" strokeWidth="12" strokeDasharray={CIRC} strokeDashoffset={CIRC * (1 - goodPct)}/>}
+              <circle cx="50" cy="50" r="38" fill="none" stroke={isDark ? '#2e0f15' : '#fee2e2'} strokeWidth="12" strokeDasharray={CIRC} strokeDashoffset="0"/>
+              {cautionPct > 0 && <circle cx="50" cy="50" r="38" fill="none" stroke={isDark ? '#3d280e' : '#fef3c7'} strokeWidth="12" strokeDasharray={CIRC} strokeDashoffset={CIRC * (1 - cautionPct - highPct)}/>}
+              {goodPct > 0 && <circle cx="50" cy="50" r="38" fill="none" stroke="#22c55e" strokeWidth="12" strokeDasharray={CIRC} strokeDashoffset={CIRC * (1 - goodPct)}/>}
             </svg>
-            <div className="donut-center-label"><b>{total}</b><small>{lang === 'हिंदी' ? 'कुल' : 'Total'}</small></div>
+            <div className="donut-center-label"><b style={{ color: isDark ? '#ffffff' : 'var(--ink-900)' }}>{total}</b><small>{lang === 'हिंदी' ? 'कुल' : 'Total'}</small></div>
           </div>
           <div className="donut-legend-stack">
-            <div className="donut-legend-row"><span><span className="donut-legend-dot" style={{ background: '#16a34a' }}/>{t.goodQuality} ({total > 0 ? Math.round((good/total)*100) : 0}%)</span><b>{good}</b></div>
+            <div className="donut-legend-row"><span><span className="donut-legend-dot" style={{ background: '#22c55e' }}/>{t.goodQuality} ({total > 0 ? Math.round((good/total)*100) : 0}%)</span><b>{good}</b></div>
             <div className="donut-legend-row"><span><span className="donut-legend-dot" style={{ background: '#f59e0b' }}/>{t.caution} ({total > 0 ? Math.round((caution/total)*100) : 0}%)</span><b>{caution}</b></div>
             <div className="donut-legend-row"><span><span className="donut-legend-dot" style={{ background: '#ef4444' }}/>{t.highRisk} ({total > 0 ? Math.round((high/total)*100) : 0}%)</span><b>{high}</b></div>
           </div>
@@ -697,7 +698,7 @@ function Dashboard() {
       <div className="table-container">
         <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <b style={{ fontSize: 14 }}>{t.recentAnalyses}</b>
-          <Link to="/history" style={{ fontSize: 12, color: 'var(--brand-primary)', fontWeight: 700 }}>{t.viewAll}</Link>
+          <button onClick={() => navigate('/history')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--brand-primary)', fontWeight: 700 }}>{t.viewAll}</button>
         </div>
         <table className="data-table">
           <thead>
@@ -716,7 +717,7 @@ function Dashboard() {
                   <td>{dateStr}</td>
                   <td><b>{t2.score ?? 87}</b></td>
                   <td><span className={`badge ${riskClass(risk)}`}>{locTerm(risk)}</span></td>
-                  <td><Link to={`/analysis/${id}`} className="button secondary sm"><Eye size={12}/> {t.view}</Link></td>
+                  <td><button className="button secondary sm" onClick={() => navigate(`/analysis/${id}`)}><Eye size={12}/> {t.view}</button></td>
                 </tr>
               )
             })}
@@ -963,6 +964,8 @@ function Result() {
   const maxConf = (!isNaN(rawMax) && rawMax >= confidence) ? rawMax : Math.min(100, confidence + 4)
   const isBad = risk === 'Bad' || risk === 'High Risk' || score < 55
   const isCaution = !isBad && (risk === 'Caution' || score < 78)
+  const isHighRisk = isBad
+  const paramsObj = test.parameters ? (Array.isArray(test.parameters) ? Object.fromEntries(test.parameters) : test.parameters) : {}
 
   const dynamicImage = test.image || (isBad
     ? "https://images.unsplash.com/photo-1595855759920-86582396756a?w=600&auto=format&fit=crop"
@@ -1707,6 +1710,7 @@ function MilkYield() {
 
 /* ─────────────────── SCREEN 7: HISTORY PAGE ─────────────────── */
 function History() {
+  const navigate = useNavigate()
   const { t, apiFetch, lang, loc: locTerm } = useApp()
   const [tests, setTests] = useState([])
   const [search, setSearch] = useState('')
@@ -1781,7 +1785,9 @@ function History() {
                   <td><b>{r.score ?? 87}</b></td>
                   <td><span className={`badge ${riskClass(risk)}`}>{locTerm(risk)}</span></td>
                   <td>
-                    <Link to={`/analysis/${id}`} className="button secondary sm"><Eye size={12}/> {t.view}</Link>
+                    <button className="button secondary sm" onClick={() => navigate(`/analysis/${id}`)}>
+                      <Eye size={12}/> {t.view}
+                    </button>
                   </td>
                 </tr>
               )
