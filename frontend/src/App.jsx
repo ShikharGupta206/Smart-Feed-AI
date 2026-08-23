@@ -391,6 +391,24 @@ function SmartSuggestionsCard({ suggestions, onRefresh, loading }) {
   const top3 = suggestions.slice(0, 3)
   const priConfig = isDark ? PRIORITY_CFG_DARK : PRIORITY_CFG
 
+  const resolveActionTarget = (s) => {
+    const raw = String(s?.actionLink || '').trim().toLowerCase()
+    if (raw.includes('coach')) return '/coach'
+    if (raw.includes('milk')) return '/milk-yield'
+    if (raw.includes('batch')) return '/batches'
+    if (raw.includes('report')) return '/reports'
+    if (raw.includes('assist') || raw.includes('chat')) return '/assistant'
+    if (raw.includes('analytic')) return '/analytics'
+    if (raw.includes('analysis') || raw.includes('test') || raw.includes('scan')) return '/analysis/new'
+
+    // Smart category-based redirection if link is /dashboard or unspecified
+    const cat = String(s?.category || '').toLowerCase()
+    if (cat.includes('ferment') || cat.includes('storage')) return '/coach'
+    if (cat.includes('milk')) return '/milk-yield'
+    if (cat.includes('cost')) return '/batches'
+    return '/analysis/new'
+  }
+
   return (
     <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
       <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -437,7 +455,7 @@ function SmartSuggestionsCard({ suggestions, onRefresh, loading }) {
                   <button
                     className="button primary sm"
                     style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
-                    onClick={() => navigate(s.actionLink || '/dashboard')}
+                    onClick={() => navigate(resolveActionTarget(s))}
                   >
                     {s.actionLabel || t.actBtn} <ArrowUpRight size={11}/>
                   </button>
@@ -468,7 +486,7 @@ function SmartSuggestionsCard({ suggestions, onRefresh, loading }) {
                       <span style={{ fontSize: 10, fontWeight: 700, color: pri.text, marginLeft: 'auto' }}>{pri.label}</span>
                     </div>
                     <p style={{ fontSize: 12, color: isDark ? '#e2e8f0' : 'var(--ink-600)', margin: '0 0 10px' }}>{s.description}</p>
-                    <button className="button primary sm" onClick={() => { navigate(s.actionLink || '/dashboard'); setShowAll(false) }}>
+                    <button className="button primary sm" onClick={() => { navigate(resolveActionTarget(s)); setShowAll(false) }}>
                       {s.actionLabel || t.takeAction} <ArrowUpRight size={11}/>
                     </button>
                   </div>

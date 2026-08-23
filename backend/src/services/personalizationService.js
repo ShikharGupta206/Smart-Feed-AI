@@ -283,7 +283,7 @@ function getContextualFallbackSuggestions(context, isHindi = false) {
       priority: 'medium',
       category: 'Fermentation',
       actionLabel: isHindi ? 'साइलेज कोच देखें' : 'View Silage Coach',
-      actionLink: '/silage-coach'
+      actionLink: '/coach'
     })
   }
 
@@ -310,7 +310,7 @@ function getContextualFallbackSuggestions(context, isHindi = false) {
     priority: 'medium',
     category: 'Storage',
     actionLabel: isHindi ? 'चरण पूरा करें' : 'Continue Coach',
-    actionLink: '/silage-coach'
+    actionLink: '/coach'
   })
 
   // Suggestion 4: Cost of Poor Quality & Alternative TMR
