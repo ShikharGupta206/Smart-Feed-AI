@@ -907,7 +907,8 @@ function NewAnalysis() {
 /* ─────────────────── SCREEN 3: ANALYSIS RESULT PAGE ─────────────────── */
 function Result() {
   const { id } = useParams()
-  const { t, apiFetch, lang, loc: locTerm } = useApp()
+  const { t, apiFetch, lang, loc: locTerm, settings } = useApp()
+  const isDark = Boolean(settings?.darkMode)
   const [test, setTest] = useState(null)
   const [qr, setQr] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -918,7 +919,7 @@ function Result() {
         const data = await apiFetch(`/api/tests/${id}/detail?lang=${lang}`)
         if (data && (data.id || data._id || data.score)) {
           setTest(data)
-          const qrData = await apiFetch(`/api/qr/${id}`).catch(() => null)
+          const qrData = await apiFetch(`/api/tests/${id}/qr`).catch(() => null)
           if (qrData) setQr(qrData)
         } else {
           throw new Error('No backend data')
@@ -1016,7 +1017,7 @@ function Result() {
       <div className="page-heading">
         <div>
           <h1>{t.analysisSummary}</h1>
-          <p>{t.sampleId}: <b style={{ color: 'var(--ink-900)' }}>{test.id || test._id}</b> · {t.batchId}: <b>{test.batchId || 'SILAGE-001'}</b></p>
+          <p>{t.sampleId}: <b style={{ color: isDark ? '#ffffff' : 'var(--ink-900)' }}>{test.id || test._id}</b> · {t.batchId}: <b style={{ color: isDark ? '#ffffff' : 'var(--ink-900)' }}>{test.batchId || 'SILAGE-001'}</b></p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <button className="button secondary" onClick={() => window.print()}>
@@ -1025,9 +1026,24 @@ function Result() {
         </div>
       </div>
 
-      <div style={{ background: isBad ? '#fef2f2' : isCaution ? '#fffbeb' : '#fef3c7', border: `1px solid ${isBad ? '#ef4444' : isCaution ? '#f59e0b' : '#f59e0b'}`, borderRadius: 8, padding: '10px 16px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
-        <AlertTriangle size={20} color={isBad ? '#dc2626' : '#b45309'} style={{ flexShrink: 0 }}/>
-        <div style={{ fontSize: 12, color: isBad ? '#991b1b' : '#92400e', fontWeight: 600 }}>
+      <div style={{
+        background: isDark
+          ? (isBad ? '#2e0f15' : isCaution ? '#2b1b08' : '#092516')
+          : (isBad ? '#fef2f2' : isCaution ? '#fffbeb' : '#f0fdf4'),
+        border: `1px solid ${isDark ? (isBad ? '#ef4444' : isCaution ? '#f59e0b' : '#22c55e') : (isBad ? '#fecaca' : isCaution ? '#fde68a' : '#bbf7d0')}`,
+        borderRadius: 8,
+        padding: '12px 16px',
+        marginBottom: 20,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10
+      }}>
+        <AlertTriangle size={20} color={isDark ? (isBad ? '#ef4444' : isCaution ? '#f59e0b' : '#22c55e') : (isBad ? '#dc2626' : '#b45309')} style={{ flexShrink: 0 }}/>
+        <div style={{
+          fontSize: 12,
+          color: isDark ? (isBad ? '#fca5a5' : isCaution ? '#fde68a' : '#86efac') : (isBad ? '#991b1b' : isCaution ? '#92400e' : '#166534'),
+          fontWeight: 600
+        }}>
           {t.disclaimer}
         </div>
       </div>
@@ -1036,12 +1052,12 @@ function Result() {
         <div className="card score-display-card">
           <div className="score-radial-wrap">
             <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
-              <circle cx="50" cy="50" r="42" fill="none" stroke="#e2e8f0" strokeWidth="8"/>
-              <circle cx="50" cy="50" r="42" fill="none" stroke={score >= 80 ? '#16a34a' : score >= 50 ? '#f59e0b' : '#ef4444'} strokeWidth="8" strokeDasharray="264" strokeDashoffset={`${264 - (264 * score)/100}`} strokeLinecap="round"/>
+              <circle cx="50" cy="50" r="42" fill="none" stroke={isDark ? '#143823' : '#e2e8f0'} strokeWidth="8"/>
+              <circle cx="50" cy="50" r="42" fill="none" stroke={score >= 80 ? '#22c55e' : score >= 50 ? '#f59e0b' : '#ef4444'} strokeWidth="8" strokeDasharray="264" strokeDashoffset={`${264 - (264 * score)/100}`} strokeLinecap="round"/>
             </svg>
             <div className="score-radial-inner">
-              <b style={{ color: score >= 80 ? '#16a34a' : score >= 50 ? '#f59e0b' : '#ef4444' }}>{score}</b>
-              <small style={{ fontSize: 11, color: 'var(--ink-500)' }}>/100</small>
+              <b style={{ color: score >= 80 ? '#22c55e' : score >= 50 ? '#f59e0b' : '#ef4444' }}>{score}</b>
+              <small style={{ fontSize: 11, color: isDark ? '#94a3b8' : 'var(--ink-500)' }}>/100</small>
             </div>
           </div>
 
@@ -1051,18 +1067,18 @@ function Result() {
             </span>
             <table className="score-details-table">
               <tbody>
-                <tr><td>{t.screeningStatus}</td><td style={{ fontWeight: 700 }}>{locTerm(risk)}</td></tr>
-                <tr><td>{t.sampleFeedType}</td><td>{locTerm(test.feedType || test.sampleType || 'Silage')}</td></tr>
-                <tr><td>{t.analyzedOn}</td><td>{test.analyzedOn || (test.createdAt ? new Date(test.createdAt).toLocaleDateString(lang === 'हिंदी' ? 'hi-IN' : 'en-IN', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '22 May 2026')}</td></tr>
-                <tr><td>{t.modelConfidence}</td><td><b>{confidence}%</b> ({minConf} - {maxConf}% CI)</td></tr>
-                <tr><td>{t.aiEngine}</td><td><span style={{ fontSize: 11, background: '#f1f5f9', padding: '2px 6px', borderRadius: 4 }}>{test.aiModelUsed || 'gemini-3.5-flash'}</span></td></tr>
+                <tr><td>{t.screeningStatus}</td><td style={{ fontWeight: 700, color: isDark ? '#ffffff' : 'inherit' }}>{locTerm(risk)}</td></tr>
+                <tr><td>{t.sampleFeedType}</td><td style={{ color: isDark ? '#ffffff' : 'inherit' }}>{locTerm(test.feedType || test.sampleType || 'Silage')}</td></tr>
+                <tr><td>{t.analyzedOn}</td><td style={{ color: isDark ? '#ffffff' : 'inherit' }}>{test.analyzedOn || (test.createdAt ? new Date(test.createdAt).toLocaleDateString(lang === 'हिंदी' ? 'hi-IN' : 'en-IN', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '22 May 2026')}</td></tr>
+                <tr><td>{t.modelConfidence}</td><td style={{ color: isDark ? '#ffffff' : 'inherit' }}><b>{confidence}%</b> ({minConf} - {maxConf}% CI)</td></tr>
+                <tr><td>{t.aiEngine}</td><td><span style={{ fontSize: 11, background: isDark ? '#0e291b' : '#f1f5f9', color: isDark ? '#86efac' : 'inherit', border: isDark ? '1px solid #143522' : 'none', padding: '2px 6px', borderRadius: 4 }}>{test.aiModelUsed || 'gemini-3.5-flash'}</span></td></tr>
               </tbody>
             </table>
           </div>
         </div>
 
         <div className="card" style={{ padding: 12 }}>
-          <b style={{ fontSize: 12, color: 'var(--ink-500)', display: 'block', marginBottom: 8 }}>{t.analyzedSamplePhoto}</b>
+          <b style={{ fontSize: 12, color: isDark ? '#cbd5e1' : 'var(--ink-500)', display: 'block', marginBottom: 8 }}>{t.analyzedSamplePhoto}</b>
           <div style={{ position: 'relative', width: '100%', height: 160, borderRadius: 8, overflow: 'hidden', background: '#0f172a' }}>
             <img src={dynamicImage} alt="Feed Sample" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e=>{e.target.src='https://images.unsplash.com/photo-1595855759920-86582396756a?w=600&auto=format&fit=crop'}}/>
             {(test.heatmapRegions && test.heatmapRegions.length > 0 ? test.heatmapRegions : [
@@ -1094,7 +1110,7 @@ function Result() {
               </div>
             ))}
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, marginTop: 8, color: 'var(--ink-500)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, marginTop: 8, color: isDark ? '#cbd5e1' : 'var(--ink-500)' }}>
             <span><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16a34a', display: 'inline-block', marginRight: 4 }}/> {t.lowImpactArea}</span>
             <span><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ef4444', display: 'inline-block', marginRight: 4 }}/> {t.riskMarker}</span>
           </div>
@@ -1102,30 +1118,39 @@ function Result() {
       </div>
 
       {isHighRisk && (
-        <div style={{ background: '#fef2f2', border: '1px solid #ef4444', borderRadius: 8, padding: '12px 18px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
-          <ShieldAlert size={24} color="#dc2626" style={{ flexShrink: 0 }}/>
+        <div style={{
+          background: isDark ? '#2e0f15' : '#fef2f2',
+          border: `1px solid ${isDark ? '#ef4444' : '#ef4444'}`,
+          borderRadius: 8,
+          padding: '12px 18px',
+          marginBottom: 20,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 14
+        }}>
+          <ShieldAlert size={24} color={isDark ? '#f87171' : '#dc2626'} style={{ flexShrink: 0 }}/>
           <div>
-            <b style={{ fontSize: 13, color: '#991b1b', display: 'block' }}>{t.lfaRecommend}</b>
-            <span style={{ fontSize: 12, color: '#7f1d1d' }}>{t.lfaRecommendText}</span>
+            <b style={{ fontSize: 13, color: isDark ? '#fca5a5' : '#991b1b', display: 'block' }}>{t.lfaRecommend}</b>
+            <span style={{ fontSize: 12, color: isDark ? '#fecaca' : '#7f1d1d' }}>{t.lfaRecommendText}</span>
           </div>
         </div>
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 20, marginBottom: 20 }}>
         <div className="card">
-          <b style={{ fontSize: 14, display: 'block', marginBottom: 14 }}>{t.keyIndicators}</b>
+          <b style={{ fontSize: 14, display: 'block', marginBottom: 14, color: isDark ? '#ffffff' : 'inherit' }}>{t.keyIndicators}</b>
           <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
             {dynamicIndicators.map((ind, i) => (
-              <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5 }}>
+              <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: isDark ? '#e2e8f0' : 'inherit' }}>
                 {isBad ? <XCircle size={15} color="#ef4444" style={{ flexShrink: 0, marginTop: 2 }}/> : isCaution ? <AlertTriangle size={15} color="#f59e0b" style={{ flexShrink: 0, marginTop: 2 }}/> : <CheckCircle size={15} color="#16a34a" style={{ flexShrink: 0, marginTop: 2 }}/>}
                 <span>{ind}</span>
               </li>
             ))}
           </ul>
 
-          <div style={{ marginTop: 20, paddingTop: 14, borderTop: '1px solid var(--border-light)' }}>
-            <b style={{ fontSize: 12, color: 'var(--ink-500)', display: 'block', marginBottom: 6 }}>{t.qualityScoreRange}</b>
-            <div style={{ display: 'flex', gap: 16, fontSize: 11 }}>
+          <div style={{ marginTop: 20, paddingTop: 14, borderTop: `1px solid ${isDark ? '#143522' : 'var(--border-light)'}` }}>
+            <b style={{ fontSize: 12, color: isDark ? '#94a3b8' : 'var(--ink-500)', display: 'block', marginBottom: 6 }}>{t.qualityScoreRange}</b>
+            <div style={{ display: 'flex', gap: 16, fontSize: 11, color: isDark ? '#cbd5e1' : 'inherit' }}>
               <span><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#16a34a', display: 'inline-block', marginRight: 4 }}/> {t.goodQuality} (80-100)</span>
               <span><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#f59e0b', display: 'inline-block', marginRight: 4 }}/> {t.caution} (50-79)</span>
               <span><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', display: 'inline-block', marginRight: 4 }}/> {t.highRisk} (0-49)</span>
@@ -1134,16 +1159,16 @@ function Result() {
         </div>
 
         <div className="card">
-          <b style={{ fontSize: 14, display: 'block', marginBottom: 10 }}>{t.aiExplanation}</b>
-          <p style={{ fontSize: 12.5, color: 'var(--ink-700)', lineHeight: 1.55, marginBottom: 14 }}>
+          <b style={{ fontSize: 14, display: 'block', marginBottom: 10, color: isDark ? '#ffffff' : 'inherit' }}>{t.aiExplanation}</b>
+          <p style={{ fontSize: 12.5, color: isDark ? '#cbd5e1' : 'var(--ink-700)', lineHeight: 1.55, marginBottom: 14 }}>
             {dynamicExplanation}
           </p>
           {qr?.qrDataUrl && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid var(--border-light)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: isDark ? '#092516' : '#f8fafc', borderRadius: 8, border: `1px solid ${isDark ? '#143823' : 'var(--border-light)'}` }}>
               <img src={qr.qrDataUrl} alt="Traceability QR" style={{ width: 56, height: 56 }}/>
               <div>
-                <b style={{ fontSize: 11, display: 'block', color: 'var(--ink-900)' }}>{t.qrVerification}</b>
-                <small style={{ fontSize: 10, color: 'var(--ink-500)' }}>{t.traceabilityId}: {qr.traceabilityId || test.id}</small>
+                <b style={{ fontSize: 11, display: 'block', color: isDark ? '#ffffff' : 'var(--ink-900)' }}>{t.qrVerification}</b>
+                <small style={{ fontSize: 10, color: isDark ? '#94a3b8' : 'var(--ink-500)' }}>{t.traceabilityId}: {qr.traceabilityId || test.id}</small>
               </div>
             </div>
           )}
@@ -1151,7 +1176,7 @@ function Result() {
       </div>
 
       <div className="card" style={{ marginBottom: 20 }}>
-        <b style={{ fontSize: 14, display: 'block', marginBottom: 14 }}>{t.nutritionParams}</b>
+        <b style={{ fontSize: 14, display: 'block', marginBottom: 14, color: isDark ? '#ffffff' : 'inherit' }}>{t.nutritionParams}</b>
         <div className="table-container" style={{ border: 'none', boxShadow: 'none' }}>
           <table className="data-table">
             <thead>
@@ -1163,7 +1188,7 @@ function Result() {
               {dynamicParams.map(([name, val, unit, st]) => (
                 <tr key={name}>
                   <td><b>{locTerm(name)}</b></td><td><b>{val}</b></td><td>{unit || '—'}</td>
-                  <td><small style={{ color: 'var(--ink-500)' }}>{locTerm('Standard')}</small></td>
+                  <td><small style={{ color: isDark ? '#94a3b8' : 'var(--ink-500)' }}>{locTerm('Standard')}</small></td>
                   <td><span className={`badge ${riskClass(st)}`}>{locTerm(st)}</span></td>
                 </tr>
               ))}
@@ -1174,47 +1199,47 @@ function Result() {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
         <div className="card">
-          <b style={{ fontSize: 14, display: 'block', marginBottom: 12 }}>{t.mycotoxinRisk}</b>
+          <b style={{ fontSize: 14, display: 'block', marginBottom: 12, color: isDark ? '#ffffff' : 'inherit' }}>{t.mycotoxinRisk}</b>
           <div style={{ display: 'grid', gap: 8, fontSize: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f1f5f9' }}>
-              <span>{t.overallRiskTier}:</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: `1px solid ${isDark ? '#143823' : '#f1f5f9'}` }}>
+              <span style={{ color: isDark ? '#cbd5e1' : 'inherit' }}>{t.overallRiskTier}:</span>
               <span className={`badge ${riskClass(test.mycotoxinRiskRadar?.overallRiskTier || 'Low Risk')}`}>{locTerm(test.mycotoxinRiskRadar?.overallRiskTier || 'Low Risk')}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
-              <span>{t.aflatoxinIndex}:</span><b>{test.mycotoxinRiskRadar?.aflatoxinRiskScore || 15}/100</b>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: isDark ? '#cbd5e1' : 'inherit' }}>
+              <span>{t.aflatoxinIndex}:</span><b style={{ color: isDark ? '#ffffff' : 'inherit' }}>{test.mycotoxinRiskRadar?.aflatoxinRiskScore || 15}/100</b>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
-              <span>{t.vomitoxinIndex}:</span><b>{test.mycotoxinRiskRadar?.vomitoxinRiskScore || 10}/100</b>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: isDark ? '#cbd5e1' : 'inherit' }}>
+              <span>{t.vomitoxinIndex}:</span><b style={{ color: isDark ? '#ffffff' : 'inherit' }}>{test.mycotoxinRiskRadar?.vomitoxinRiskScore || 10}/100</b>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
-              <span>{t.zearalenoneIndex}:</span><b>{test.mycotoxinRiskRadar?.zearalenoneRiskScore || 12}/100</b>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: isDark ? '#cbd5e1' : 'inherit' }}>
+              <span>{t.zearalenoneIndex}:</span><b style={{ color: isDark ? '#ffffff' : 'inherit' }}>{test.mycotoxinRiskRadar?.zearalenoneRiskScore || 12}/100</b>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
-              <span>{t.moldPercentage}:</span><b>{test.mycotoxinRiskRadar?.calculatedFactors?.moldPercentage || 1.2}%</b>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: isDark ? '#cbd5e1' : 'inherit' }}>
+              <span>{t.moldPercentage}:</span><b style={{ color: isDark ? '#ffffff' : 'inherit' }}>{test.mycotoxinRiskRadar?.calculatedFactors?.moldPercentage || 1.2}%</b>
             </div>
           </div>
         </div>
 
         <div className="card">
-          <b style={{ fontSize: 14, display: 'block', marginBottom: 12 }}>{t.costQuality}</b>
+          <b style={{ fontSize: 14, display: 'block', marginBottom: 12, color: isDark ? '#ffffff' : 'inherit' }}>{t.costQuality}</b>
           <div style={{ display: 'grid', gap: 8, fontSize: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f1f5f9' }}>
-              <span>{t.dailyLoss}:</span>
-              <b style={{ color: test.costOfPoorQuality?.dailyLossInr > 0 ? '#ef4444' : '#16a34a' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: `1px solid ${isDark ? '#143823' : '#f1f5f9'}` }}>
+              <span style={{ color: isDark ? '#cbd5e1' : 'inherit' }}>{t.dailyLoss}:</span>
+              <b style={{ color: test.costOfPoorQuality?.dailyLossInr > 0 ? '#ef4444' : (isDark ? '#4ade80' : '#16a34a') }}>
                 ₹{test.costOfPoorQuality?.dailyLossInr || 0} / {lang === 'हिंदी' ? 'दिन' : 'day'}
               </b>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: isDark ? '#cbd5e1' : 'inherit' }}>
               <span>{t.milkDropPenalty}:</span>
-              <b>{test.costOfPoorQuality?.milkDropLitersPerCow || 0} L / {lang === 'हिंदी' ? 'गाय / दिन' : 'cow / day'}</b>
+              <b style={{ color: isDark ? '#ffffff' : 'inherit' }}>{test.costOfPoorQuality?.milkDropLitersPerCow || 0} L / {lang === 'हिंदी' ? 'गाय / दिन' : 'cow / day'}</b>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: isDark ? '#cbd5e1' : 'inherit' }}>
               <span>{t.vetCostRisk}:</span>
-              <b>₹{test.costOfPoorQuality?.vetCostRiskInr || 0}</b>
+              <b style={{ color: isDark ? '#ffffff' : 'inherit' }}>₹{test.costOfPoorQuality?.vetCostRiskInr || 0}</b>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: isDark ? '#cbd5e1' : 'inherit' }}>
               <span>{t.estimatedSpoilage}:</span>
-              <b>{test.costOfPoorQuality?.estimatedSpoilagePct || 1.5}%</b>
+              <b style={{ color: isDark ? '#ffffff' : 'inherit' }}>{test.costOfPoorQuality?.estimatedSpoilagePct || 1.5}%</b>
             </div>
           </div>
         </div>
@@ -1232,37 +1257,61 @@ function Result() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Timer size={16} color={isUrgent ? '#ef4444' : '#16a34a'}/>
-                <b style={{ fontSize: 14 }}>{t.spoilageTimeline}</b>
+                <b style={{ fontSize: 14, color: isDark ? '#ffffff' : 'inherit' }}>{t.spoilageTimeline}</b>
               </div>
               <span className={`badge ${isUrgent ? 'high' : 'good'}`}>
                 {isUrgent ? t.urgentFeed.replace('{days}', safeDays) : t.safeWindow.replace('{days}', safeDays)}
               </span>
             </div>
-            <p style={{ fontSize: 12, color: 'var(--ink-600)', margin: '0 0 14px' }}>
+            <p style={{ fontSize: 12, color: isDark ? '#cbd5e1' : 'var(--ink-600)', margin: '0 0 14px' }}>
               {t.spoilageBasedOn.replace('{moisture}', moisture).replace('{temp}', temp)}
             </p>
 
             {/* Visual Timeline Bar */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 12 }}>
-              <div style={{ padding: 10, borderRadius: 8, background: '#f0fdf4', border: '1px solid #bbf7d0', textAlign: 'center' }}>
-                <b style={{ fontSize: 11, color: '#16a34a', display: 'block' }}>{t.day12}</b>
-                <span style={{ fontSize: 10, color: 'var(--ink-600)' }}>{t.day12Desc}</span>
+              <div style={{
+                padding: 10,
+                borderRadius: 8,
+                background: isDark ? '#092516' : '#f0fdf4',
+                border: `1px solid ${isDark ? '#16a34a66' : '#bbf7d0'}`,
+                textAlign: 'center'
+              }}>
+                <b style={{ fontSize: 11, color: isDark ? '#4ade80' : '#16a34a', display: 'block' }}>{t.day12}</b>
+                <span style={{ fontSize: 10, color: isDark ? '#cbd5e1' : 'var(--ink-600)' }}>{t.day12Desc}</span>
               </div>
-              <div style={{ padding: 10, borderRadius: 8, background: safeDays > 2 ? '#f0fdf4' : '#fffbeb', border: `1px solid ${safeDays > 2 ? '#bbf7d0' : '#fde68a'}`, textAlign: 'center' }}>
-                <b style={{ fontSize: 11, color: safeDays > 2 ? '#16a34a' : '#d97706', display: 'block' }}>{t.day34}</b>
-                <span style={{ fontSize: 10, color: 'var(--ink-600)' }}>{t.day34Desc}</span>
+              <div style={{
+                padding: 10,
+                borderRadius: 8,
+                background: isDark ? (safeDays > 2 ? '#092516' : '#2b1b08') : (safeDays > 2 ? '#f0fdf4' : '#fffbeb'),
+                border: `1px solid ${isDark ? (safeDays > 2 ? '#16a34a66' : '#f59e0b66') : (safeDays > 2 ? '#bbf7d0' : '#fde68a')}`,
+                textAlign: 'center'
+              }}>
+                <b style={{ fontSize: 11, color: isDark ? (safeDays > 2 ? '#4ade80' : '#f59e0b') : (safeDays > 2 ? '#16a34a' : '#d97706'), display: 'block' }}>{t.day34}</b>
+                <span style={{ fontSize: 10, color: isDark ? '#cbd5e1' : 'var(--ink-600)' }}>{t.day34Desc}</span>
               </div>
-              <div style={{ padding: 10, borderRadius: 8, background: safeDays > 4 ? '#fffbeb' : '#fff1f2', border: `1px solid ${safeDays > 4 ? '#fde68a' : '#fecaca'}`, textAlign: 'center' }}>
-                <b style={{ fontSize: 11, color: safeDays > 4 ? '#d97706' : '#dc2626', display: 'block' }}>{t.day57}</b>
-                <span style={{ fontSize: 10, color: 'var(--ink-600)' }}>{t.day57Desc}</span>
+              <div style={{
+                padding: 10,
+                borderRadius: 8,
+                background: isDark ? (safeDays > 4 ? '#2b1b08' : '#2e0f15') : (safeDays > 4 ? '#fffbeb' : '#fff1f2'),
+                border: `1px solid ${isDark ? (safeDays > 4 ? '#f59e0b66' : '#ef444466') : (safeDays > 4 ? '#fde68a' : '#fecaca')}`,
+                textAlign: 'center'
+              }}>
+                <b style={{ fontSize: 11, color: isDark ? (safeDays > 4 ? '#f59e0b' : '#f87171') : (safeDays > 4 ? '#d97706' : '#dc2626'), display: 'block' }}>{t.day57}</b>
+                <span style={{ fontSize: 10, color: isDark ? '#cbd5e1' : 'var(--ink-600)' }}>{t.day57Desc}</span>
               </div>
-              <div style={{ padding: 10, borderRadius: 8, background: '#fff1f2', border: '1px solid #fecaca', textAlign: 'center' }}>
-                <b style={{ fontSize: 11, color: '#dc2626', display: 'block' }}>{t.day8Plus}</b>
-                <span style={{ fontSize: 10, color: 'var(--ink-600)' }}>{t.day8PlusDesc}</span>
+              <div style={{
+                padding: 10,
+                borderRadius: 8,
+                background: isDark ? '#2e0f15' : '#fff1f2',
+                border: `1px solid ${isDark ? '#ef444466' : '#fecaca'}`,
+                textAlign: 'center'
+              }}>
+                <b style={{ fontSize: 11, color: isDark ? '#f87171' : '#dc2626', display: 'block' }}>{t.day8Plus}</b>
+                <span style={{ fontSize: 10, color: isDark ? '#cbd5e1' : 'var(--ink-600)' }}>{t.day8PlusDesc}</span>
               </div>
             </div>
 
-            <div style={{ fontSize: 11.5, background: '#f8fafc', padding: '8px 12px', borderRadius: 6, color: 'var(--ink-700)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ fontSize: 11.5, background: isDark ? '#0e291b' : '#f8fafc', padding: '8px 12px', borderRadius: 6, color: isDark ? '#e2e8f0' : 'var(--ink-700)', display: 'flex', alignItems: 'center', gap: 8 }}>
               <Zap size={13} color="#f59e0b"/>
               <span><b>{t.actionTip}:</b> {safeDays <= 3 ? t.spoilageActionUrgent : t.spoilageActionSafe}</span>
             </div>
@@ -1275,49 +1324,57 @@ function Result() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Salad size={16} color="#0ea5e9"/>
-            <b style={{ fontSize: 14 }}>{t.rationOptimizer}</b>
+            <b style={{ fontSize: 14, color: isDark ? '#ffffff' : 'inherit' }}>{t.rationOptimizer}</b>
           </div>
-          <span style={{ fontSize: 11, color: '#16a34a', fontWeight: 700, background: '#f0fdf4', padding: '2px 8px', borderRadius: 99, border: '1px solid #bbf7d0' }}>
+          <span style={{
+            fontSize: 11,
+            color: isDark ? '#86efac' : '#16a34a',
+            fontWeight: 700,
+            background: isDark ? '#092516' : '#f0fdf4',
+            padding: '2px 8px',
+            borderRadius: 99,
+            border: `1px solid ${isDark ? '#16a34a66' : '#bbf7d0'}`
+          }}>
             {t.potentialSavings}
           </span>
         </div>
-        <p style={{ fontSize: 12, color: 'var(--ink-600)', margin: '0 0 12px' }}>
+        <p style={{ fontSize: 12, color: isDark ? '#cbd5e1' : 'var(--ink-600)', margin: '0 0 12px' }}>
           {t.rationOptDesc}
         </p>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 12 }}>
-          <div style={{ padding: 12, borderRadius: 8, background: '#f8fafc', border: '1px solid var(--border-light)' }}>
-            <b style={{ fontSize: 12, color: 'var(--ink-900)', display: 'block', marginBottom: 4 }}>{t.mustardCake}</b>
-            <p style={{ fontSize: 11, color: 'var(--ink-600)', margin: '0 0 6px' }}>{t.mustardCakeDesc}</p>
-            <small style={{ fontSize: 10, color: '#16a34a', fontWeight: 700 }}>{t.mustardCakeSave}</small>
+          <div style={{ padding: 12, borderRadius: 8, background: isDark ? '#0a2015' : '#f8fafc', border: `1px solid ${isDark ? '#173b27' : 'var(--border-light)'}` }}>
+            <b style={{ fontSize: 12, color: isDark ? '#ffffff' : 'var(--ink-900)', display: 'block', marginBottom: 4 }}>{t.mustardCake}</b>
+            <p style={{ fontSize: 11, color: isDark ? '#cbd5e1' : 'var(--ink-600)', margin: '0 0 6px' }}>{t.mustardCakeDesc}</p>
+            <small style={{ fontSize: 10, color: isDark ? '#4ade80' : '#16a34a', fontWeight: 700 }}>{t.mustardCakeSave}</small>
           </div>
-          <div style={{ padding: 12, borderRadius: 8, background: '#f8fafc', border: '1px solid var(--border-light)' }}>
-            <b style={{ fontSize: 12, color: 'var(--ink-900)', display: 'block', marginBottom: 4 }}>{t.greenBerseem}</b>
-            <p style={{ fontSize: 11, color: 'var(--ink-600)', margin: '0 0 6px' }}>{t.greenBerseemDesc}</p>
-            <small style={{ fontSize: 10, color: '#16a34a', fontWeight: 700 }}>{t.greenBerseemGain}</small>
+          <div style={{ padding: 12, borderRadius: 8, background: isDark ? '#0a2015' : '#f8fafc', border: `1px solid ${isDark ? '#173b27' : 'var(--border-light)'}` }}>
+            <b style={{ fontSize: 12, color: isDark ? '#ffffff' : 'var(--ink-900)', display: 'block', marginBottom: 4 }}>{t.greenBerseem}</b>
+            <p style={{ fontSize: 11, color: isDark ? '#cbd5e1' : 'var(--ink-600)', margin: '0 0 6px' }}>{t.greenBerseemDesc}</p>
+            <small style={{ fontSize: 10, color: isDark ? '#4ade80' : '#16a34a', fontWeight: 700 }}>{t.greenBerseemGain}</small>
           </div>
-          <div style={{ padding: 12, borderRadius: 8, background: '#f8fafc', border: '1px solid var(--border-light)' }}>
-            <b style={{ fontSize: 12, color: 'var(--ink-900)', display: 'block', marginBottom: 4 }}>{t.minBuffer}</b>
-            <p style={{ fontSize: 11, color: 'var(--ink-600)', margin: '0 0 6px' }}>{t.minBufferDesc}</p>
-            <small style={{ fontSize: 10, color: '#0ea5e9', fontWeight: 700 }}>{t.minBufferBenefit}</small>
+          <div style={{ padding: 12, borderRadius: 8, background: isDark ? '#0a2015' : '#f8fafc', border: `1px solid ${isDark ? '#173b27' : 'var(--border-light)'}` }}>
+            <b style={{ fontSize: 12, color: isDark ? '#ffffff' : 'var(--ink-900)', display: 'block', marginBottom: 4 }}>{t.minBuffer}</b>
+            <p style={{ fontSize: 11, color: isDark ? '#cbd5e1' : 'var(--ink-600)', margin: '0 0 6px' }}>{t.minBufferDesc}</p>
+            <small style={{ fontSize: 10, color: '#38bdf8', fontWeight: 700 }}>{t.minBufferBenefit}</small>
           </div>
         </div>
       </div>
 
       <div className="card">
-        <b style={{ fontSize: 14, display: 'block', marginBottom: 12 }}>{t.advisories}</b>
+        <b style={{ fontSize: 14, display: 'block', marginBottom: 12, color: isDark ? '#ffffff' : 'inherit' }}>{t.advisories}</b>
         <div style={{ display: 'grid', gap: 8 }}>
           {(test.advisories && test.advisories.length > 0 ? test.advisories : [
             lang === 'हिंदी' ? 'द्वितीयक एरोबिक क्षय को रोकने के लिए दैनिक ट्रेंच फीडिंग गहराई (15-20 सेमी) बनाए रखें।' : 'Maintain daily trench feeding depth (15-20cm) to prevent secondary aerobic spoilage.',
             lang === 'हिंदी' ? 'सुनिश्चित करें कि टीएमआर राशन पर्याप्त सूखे चारे और ऊर्जा को संतुलित करता है।' : 'Ensure Total Mixed Ration balances energy with adequate dry matter intake.'
           ]).map((adv, i) => (
-            <div key={i} style={{ padding: '8px 12px', background: '#f8fafc', borderRadius: 6, fontSize: 12.5, borderLeft: '3px solid #16a34a' }}>
+            <div key={i} style={{ padding: '8px 12px', background: isDark ? '#0e291b' : '#f8fafc', borderRadius: 6, fontSize: 12.5, color: isDark ? '#f1f5f9' : 'inherit', borderLeft: '3px solid #16a34a' }}>
               {adv}
             </div>
           ))}
         </div>
         {test.recommendations && (
-          <p style={{ marginTop: 14, fontSize: 12.5, color: 'var(--ink-700)', fontWeight: 600 }}>
+          <p style={{ marginTop: 14, fontSize: 12.5, color: isDark ? '#e2e8f0' : 'var(--ink-700)', fontWeight: 600 }}>
             {t.farmerRecommendation}: {test.recommendations}
           </p>
         )}
