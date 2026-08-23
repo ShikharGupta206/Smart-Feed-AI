@@ -52,6 +52,7 @@ export async function createTest(req, res, next) {
 
     const sampleId = generateSampleId()
     const recordId = new mongoose.Types.ObjectId().toString()
+    const analyzedOn = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 
     const normalizeSt = (v) => {
       if (!v) return 'Good'
