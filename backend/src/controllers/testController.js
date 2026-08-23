@@ -50,6 +50,20 @@ export async function createTest(req, res, next) {
       smell
     })
 
+    // Check if the uploaded image was rejected as non-feed
+    if (aiAnalysis && aiAnalysis.isValidFeedImage === false) {
+      const lang = req.body.language || req.query.lang || 'en'
+      const isHi = lang === 'hi' || lang === 'Hindi' || lang === 'हिंदी' || String(lang).toLowerCase().includes('hi')
+      const message = isHi
+        ? (aiAnalysis.rejectionReasonHi || 'अमान्य फ़ोटो: अपलोड की गई छवि पशु आहार, हरा चारा या साइलेज नहीं है। कृपया पशु आहार पेलेट्स, हरे/सूखे चारे या साइलेज पिट नमूने की स्पष्ट फ़ोटो अपलोड करें।')
+        : (aiAnalysis.rejectionReason || 'Invalid Image: The uploaded photo does not appear to be cattle feed, fodder, or silage. Please upload a clear photo of cattle feed, fodder, or a silage pit sample.')
+      return res.status(400).json({
+        error: 'INVALID_FEED_IMAGE',
+        message,
+        isValidFeedImage: false
+      })
+    }
+
     const sampleId = generateSampleId()
     const recordId = new mongoose.Types.ObjectId().toString()
     const analyzedOn = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })

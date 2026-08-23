@@ -80,10 +80,20 @@ Analyze this sample image and provided metadata:
 - Storage Condition: ${storageCondition}
 - Farmer Notes: ${notes || 'None'}
 
-Provide a sample-specific visual diagnostic based on the actual physical appearance, color matrix, moisture sheen, particle texture, and mold status seen in the photo.
+CRITICAL VALIDATION STEP:
+First, inspect the uploaded photo carefully.
+Determine whether the image depicts cattle feed, silage, green fodder, dry fodder, straw, hay, cattle pellets, grain mash, or agricultural forage ingredients used in dairy/cattle farming.
 
-Return ONLY a valid JSON object matching this schema:
+If the image is completely unrelated to cattle feed/silage (for example: human face, selfie, person, car, vehicle, electronics, phone, computer, household furniture, pet dog/cat, human food dishes, clothes, landscape without cattle feed, or documents/receipts), you MUST REJECT it by returning ONLY this JSON:
 {
+  "isValidFeedImage": false,
+  "rejectionReason": "The uploaded photo does not appear to be cattle feed, fodder, or silage. Please upload a clear photo of your cattle feed sample, silage pit face, or forage.",
+  "rejectionReasonHi": "अपलोड की गई फ़ोटो पशु आहार, हरा चारा या साइलेज नहीं लग रही है। कृपया अपने पशु आहार, साइलेज या चारे के नमूने की स्पष्ट फ़ोटो अपलोड करें।"
+}
+
+If the image IS a valid cattle feed, silage, or forage sample, return ONLY this valid JSON:
+{
+  "isValidFeedImage": true,
   "score": 87,
   "confidence": 92,
   "confidenceInterval": { "min": 88, "max": 96 },
@@ -118,6 +128,18 @@ Note: "confidence" is the point estimate (0-100), and "confidenceInterval" must 
 
   const errors = []
 
+  function normalizeStatus(st) {
+    if (!st) return 'Good'
+    const s = String(st).toLowerCase().trim()
+    if (s.includes('bad') || s.includes('poor') || s.includes('high') || s.includes('danger') || s.includes('critical') || s.includes('severe')) {
+      return 'Bad'
+    }
+    if (s.includes('warn') || s.includes('caut') || s.includes('mod') || s.includes('medium') || s.includes('fair')) {
+      return 'Warning'
+    }
+    return 'Good'
+  }
+
   for (const modelName of SUPPORTED_MODELS) {
     try {
       console.log(`[Gemini Vision] Running visual screening with ${modelName}...`)
@@ -138,22 +160,21 @@ Note: "confidence" is the point estimate (0-100), and "confidenceInterval" must 
         14000
       )
 
-function normalizeStatus(st) {
-  if (!st) return 'Good'
-  const s = String(st).toLowerCase().trim()
-  if (s.includes('bad') || s.includes('poor') || s.includes('high') || s.includes('danger') || s.includes('critical') || s.includes('severe')) {
-    return 'Bad'
-  }
-  if (s.includes('warn') || s.includes('caut') || s.includes('mod') || s.includes('medium') || s.includes('fair')) {
-    return 'Warning'
-  }
-  return 'Good'
-}
-
       const rawText = response.response.text()
       const parsed = JSON.parse(rawText)
 
+      // Handle Rejection if unrelated image
+      if (parsed && parsed.isValidFeedImage === false) {
+        console.warn(`[Gemini Vision] Image rejected — not cattle feed/silage: ${parsed.rejectionReason}`)
+        return {
+          isValidFeedImage: false,
+          rejectionReason: parsed.rejectionReason || 'The uploaded photo does not appear to be cattle feed, fodder, or silage. Please upload a clear photo of your cattle feed sample, silage pit face, or forage.',
+          rejectionReasonHi: parsed.rejectionReasonHi || 'अपलोड की गई फ़ोटो पशु आहार, हरा चारा या साइलेज नहीं लग रही है। कृपया अपने पशु आहार, साइलेज या चारे के नमूने की स्पष्ट फ़ोटो अपलोड करें।'
+        }
+      }
+
       if (parsed && typeof parsed.score === 'number' && parsed.parameters) {
+        parsed.isValidFeedImage = true
         parsed.aiModelUsed = modelName
         parsed.overallStatus = normalizeStatus(parsed.overallStatus || (parsed.score < 55 ? 'Bad' : parsed.score < 78 ? 'Warning' : 'Good'))
 

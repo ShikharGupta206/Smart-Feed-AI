@@ -756,10 +756,12 @@ const getBase64 = file => new Promise((resolve, reject) => {
 
 function NewAnalysis() {
   const navigate = useNavigate()
-  const { t, toast, apiFetch, lang, loc: locTerm } = useApp()
+  const { t, toast, apiFetch, lang, loc: locTerm, settings } = useApp()
+  const isDark = Boolean(settings?.darkMode)
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [invalidAlert, setInvalidAlert] = useState(null)
   const [sampleType, setSampleType] = useState('Silage')
   const [feedType, setFeedType] = useState('Maize Silage')
   const [storageDuration, setStorageDuration] = useState('20')
@@ -775,6 +777,7 @@ function NewAnalysis() {
     if (!f) return
     setFile(f)
     setPreview(URL.createObjectURL(f))
+    setInvalidAlert(null)
   }
 
   const handleAnalyze = async (e) => {
@@ -782,6 +785,7 @@ function NewAnalysis() {
     if (!file) return toast(t.selectFileError || 'Please select or capture a feed/silage image first', 'error')
 
     setLoading(true)
+    setInvalidAlert(null)
     try {
       const base64 = await getBase64(file)
       const data = await apiFetch('/api/tests', {
@@ -801,10 +805,17 @@ function NewAnalysis() {
           language: lang
         })
       })
-      toast(t.analysisCompletedToast || 'Screening analysis completed with Gemini Vision AI!', 'success')
-      navigate(`/analysis/${data.id || data._id}`)
+
+      if (data && (data.id || data._id)) {
+        toast(t.analysisCompletedToast || 'Screening analysis completed with Gemini Vision AI!', 'success')
+        navigate(`/analysis/${data.id || data._id}`)
+      } else {
+        throw new Error(data?.message || 'Invalid response from server')
+      }
     } catch (err) {
-      toast(err.message, 'error')
+      const errorMsg = err.message || (lang === 'हिंदी' ? 'अपलोड की गई छवि पशु आहार या साइलेज नहीं है।' : 'The uploaded image does not appear to be cattle feed, fodder, or silage.')
+      setInvalidAlert(errorMsg)
+      toast(errorMsg, 'error')
     } finally {
       setLoading(false)
     }
@@ -918,6 +929,75 @@ function NewAnalysis() {
           </div>
         </div>
       </form>
+
+      {invalidAlert && (
+        <div className="modal-backdrop" onClick={() => setInvalidAlert(null)}>
+          <div
+            className="modal-box"
+            style={{
+              maxWidth: 480,
+              textAlign: 'center',
+              padding: '28px 24px',
+              background: isDark ? '#0a2015' : '#ffffff',
+              border: isDark ? '1px solid #143823' : '1px solid var(--border-light)'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{
+              width: 56,
+              height: 56,
+              borderRadius: '50%',
+              background: isDark ? '#2e0f15' : '#fef2f2',
+              border: `2px solid ${isDark ? '#ef4444' : '#ef4444'}`,
+              display: 'grid',
+              placeItems: 'center',
+              margin: '0 auto 16px'
+            }}>
+              <AlertTriangle size={28} color={isDark ? '#f87171' : '#dc2626'}/>
+            </div>
+            <h3 style={{ fontSize: 18, marginBottom: 8, color: isDark ? '#fca5a5' : '#dc2626' }}>
+              {t.invalidFeedImageTitle || 'Invalid Feed / Silage Image'}
+            </h3>
+            <p style={{ fontSize: 13, color: isDark ? '#e2e8f0' : 'var(--ink-600)', lineHeight: 1.6, marginBottom: 16 }}>
+              {invalidAlert}
+            </p>
+            <div style={{
+              background: isDark ? '#092516' : '#f8fafc',
+              border: `1px dashed ${isDark ? '#16a34a88' : '#cbd5e1'}`,
+              borderRadius: 8,
+              padding: '10px 14px',
+              fontSize: 12,
+              color: isDark ? '#86efac' : 'var(--ink-700)',
+              marginBottom: 20
+            }}>
+              💡 <b>{lang === 'हिंदी' ? 'स्वीकार्य नमूने:' : 'Allowed Samples:'}</b> {lang === 'हिंदी' ? 'मक्का साइलेज, सूखा भूसा, हरा बरसीम/ज्वार, दाना पेलेट्स, या चारा गड्ढा।' : 'Maize silage, chopped straw, green berseem, cattle pellets, or silage pit face.'}
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                type="button"
+                className="button secondary"
+                style={{ flex: 1 }}
+                onClick={() => setInvalidAlert(null)}
+              >
+                {lang === 'हिंदी' ? 'बंद करें' : 'Dismiss'}
+              </button>
+              <button
+                type="button"
+                className="button primary"
+                style={{ flex: 1 }}
+                onClick={() => {
+                  setInvalidAlert(null)
+                  setFile(null)
+                  setPreview(null)
+                  fileInputRef.current?.click()
+                }}
+              >
+                <Upload size={14}/> {t.changePhoto}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -110,9 +110,12 @@ export const LANGS = {
     notesOpt: 'Farmer Observations / Notes (Optional)',
     notesPlaceholder: 'Any visible signs, rain exposure, or cattle intake observations...',
     analyzeBtn: 'Analyze Sample with Gemini AI',
-    analyzing: 'Analyzing Sample with Gemini Vision AI...',
+    analyzing: 'Analyzing with Gemini Vision AI...',
     selectFileError: 'Please select or capture a feed/silage image first',
     analysisCompletedToast: 'Screening analysis completed with Gemini Vision AI!',
+    invalidFeedImageTitle: 'Invalid Feed / Silage Image',
+    invalidFeedImageMsg: 'The uploaded photo does not appear to be cattle feed, fodder, or silage. Please upload a clear photo of cattle feed pellets, green/dry fodder, or a silage pit sample.',
+    invalidImageAlertTip: 'Project Requirement: Photos must be cattle feed, silage, grain mash, or pasture forage.',
 
     // Result Screen
     analysisSummary: 'Quality Screening Overview',
@@ -410,6 +413,9 @@ export const LANGS = {
     analyzing: 'Gemini Vision AI से विश्लेषण हो रहा है...',
     selectFileError: 'कृपया पहले चारे/साइलेज की फोटो चुनें या खींचें',
     analysisCompletedToast: 'Gemini Vision AI द्वारा विश्लेषण पूरा हुआ!',
+    invalidFeedImageTitle: 'अमान्य चारा / साइलेज फ़ोटो',
+    invalidFeedImageMsg: 'अपलोड की गई छवि पशु आहार, हरा चारा या साइलेज नहीं लग रही है। कृपया पशु आहार पेलेट्स, हरे/सूखे चारे या साइलेज पिट नमूने की स्पष्ट फ़ोटो अपलोड करें।',
+    invalidImageAlertTip: 'परियोजना आवश्यकता: फ़ोटो में पशु आहार, साइलेज, दाना मिश्रण या चारा होना अनिवार्य है।',
 
     // Result Screen
     analysisSummary: 'गुणवत्ता स्क्रीनिंग सारांश',
