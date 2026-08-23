@@ -1,9 +1,9 @@
 export const mockBatches = [
-  { id: 'SILAGE-001', type: 'Silage', feedType: 'Maize Silage', createdOn: '20 May 2026', analyses: 4, status: 'Active', storage: 'Covered' },
-  { id: 'SILAGE-002', type: 'Silage', feedType: 'Grass Silage', createdOn: '19 May 2026', analyses: 3, status: 'Active', storage: 'Silo' },
-  { id: 'FEED-001', type: 'Feed', feedType: 'Cattle Feed', createdOn: '18 May 2026', analyses: 2, status: 'Active', storage: 'Covered' },
-  { id: 'SILAGE-003', type: 'Silage', feedType: 'Maize Silage', createdOn: '16 May 2026', analyses: 5, status: 'Active', storage: 'Open' },
-  { id: 'FEED-002', type: 'Feed', feedType: 'Dairy Concentrate', createdOn: '15 May 2026', analyses: 2, status: 'Active', storage: 'Covered' }
+  { id: 'SILAGE-001', type: 'Silage', feedType: 'Maize Silage', createdOn: '20 May 2026', analyses: 4, analysesCount: 4, averageScore: 87, status: 'Active', storage: 'Covered Pit' },
+  { id: 'SILAGE-002', type: 'Silage', feedType: 'Grass Silage', createdOn: '19 May 2026', analyses: 3, analysesCount: 3, averageScore: 68, status: 'Caution', storage: 'Silo Bag' },
+  { id: 'FEED-001', type: 'Feed', feedType: 'Cattle Feed Pellet', createdOn: '18 May 2026', analyses: 2, analysesCount: 2, averageScore: 82, status: 'Active', storage: 'Covered Warehouse' },
+  { id: 'SILAGE-003', type: 'Silage', feedType: 'Maize Silage', createdOn: '16 May 2026', analyses: 5, analysesCount: 5, averageScore: 44, status: 'High Risk', storage: 'Open Stack' },
+  { id: 'FEED-002', type: 'Feed', feedType: 'Dairy Concentrate', createdOn: '15 May 2026', analyses: 2, analysesCount: 2, averageScore: 76, status: 'Active', storage: 'Covered Warehouse' }
 ]
 export const mockTests = [
   { id: 'SF-2026-1256', batchId: 'SILAGE-001', type: 'Silage', analyzedOn: '22 May 2026, 10:30 AM', score: 87, risk: 'Good', sampleType: 'Silage' },
