@@ -1,9 +1,17 @@
 import mongoose from 'mongoose'
 
+const normalizeStatus = (v) => {
+  if (!v) return 'Good'
+  const s = String(v).toLowerCase().trim()
+  if (s.includes('bad') || s.includes('poor') || s.includes('high') || s.includes('danger') || s.includes('critical') || s.includes('severe')) return 'Bad'
+  if (s.includes('warn') || s.includes('caut') || s.includes('mod') || s.includes('medium') || s.includes('fair')) return 'Warning'
+  return 'Good'
+}
+
 const parameterSchema = new mongoose.Schema({
   value: { type: mongoose.Schema.Types.Mixed, required: true },
   unit: { type: String, default: '' },
-  status: { type: String, enum: ['Good', 'Warning', 'Bad'], default: 'Good' },
+  status: { type: String, enum: ['Good', 'Warning', 'Bad', 'Poor', 'Caution', 'High Risk', 'Low Risk', 'Moderate'], set: normalizeStatus, default: 'Good' },
   label: { type: String, required: true },
   optimalRange: { type: String, default: '' }
 }, { _id: false })
@@ -59,7 +67,7 @@ const testResultSchema = new mongoose.Schema({
     vetCostRiskInr: { type: Number, default: 0 },
     estimatedSpoilagePct: { type: Number, default: 0 }
   },
-  overallStatus: { type: String, enum: ['Good', 'Warning', 'Bad'], default: 'Good', required: true },
+  overallStatus: { type: String, enum: ['Good', 'Warning', 'Bad', 'Poor', 'Caution', 'High Risk', 'Low Risk', 'Moderate'], set: normalizeStatus, default: 'Good', required: true },
   aiModelUsed: { type: String, default: 'gemini-3.5-flash' },
   parameters: { type: Map, of: parameterSchema, required: true },
   keyIndicators: [{ type: String }],

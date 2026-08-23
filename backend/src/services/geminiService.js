@@ -138,11 +138,38 @@ Note: "confidence" is the point estimate (0-100), and "confidenceInterval" must 
         14000
       )
 
+function normalizeStatus(st) {
+  if (!st) return 'Good'
+  const s = String(st).toLowerCase().trim()
+  if (s.includes('bad') || s.includes('poor') || s.includes('high') || s.includes('danger') || s.includes('critical') || s.includes('severe')) {
+    return 'Bad'
+  }
+  if (s.includes('warn') || s.includes('caut') || s.includes('mod') || s.includes('medium') || s.includes('fair')) {
+    return 'Warning'
+  }
+  return 'Good'
+}
+
       const rawText = response.response.text()
       const parsed = JSON.parse(rawText)
 
       if (parsed && typeof parsed.score === 'number' && parsed.parameters) {
         parsed.aiModelUsed = modelName
+        parsed.overallStatus = normalizeStatus(parsed.overallStatus || (parsed.score < 55 ? 'Bad' : parsed.score < 78 ? 'Warning' : 'Good'))
+
+        // Normalize every individual parameter's status
+        if (parsed.parameters && typeof parsed.parameters === 'object') {
+          for (const key of Object.keys(parsed.parameters)) {
+            const param = parsed.parameters[key]
+            if (param && typeof param === 'object') {
+              param.status = normalizeStatus(param.status)
+              if (!param.label) {
+                param.label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+              }
+            }
+          }
+        }
+
         parsed.mycotoxinRiskRadar = calculateMycotoxinRiskRadar(parsed.parameters, metadata)
         parsed.costOfPoorQuality = calculateCostOfPoorQuality(parsed.score, herdSize, milkPrice)
         parsed.disclaimer = 'Screening estimate for management decision support. Not a regulatory laboratory assay.'

@@ -53,7 +53,28 @@ export async function createTest(req, res, next) {
     const sampleId = generateSampleId()
     const recordId = new mongoose.Types.ObjectId().toString()
 
-    const analyzedOn = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    const normalizeSt = (v) => {
+      if (!v) return 'Good'
+      const s = String(v).toLowerCase().trim()
+      if (s.includes('bad') || s.includes('poor') || s.includes('high') || s.includes('danger') || s.includes('critical') || s.includes('severe')) return 'Bad'
+      if (s.includes('warn') || s.includes('caut') || s.includes('mod') || s.includes('medium') || s.includes('fair')) return 'Warning'
+      return 'Good'
+    }
+
+    const cleanParameters = {}
+    if (aiAnalysis.parameters && typeof aiAnalysis.parameters === 'object') {
+      for (const [k, v] of Object.entries(aiAnalysis.parameters)) {
+        if (v && typeof v === 'object') {
+          cleanParameters[k] = {
+            value: v.value ?? 'N/A',
+            unit: v.unit || '',
+            status: normalizeSt(v.status),
+            label: v.label || k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            optimalRange: v.optimalRange || ''
+          }
+        }
+      }
+    }
 
     const newTest = {
       _id: recordId,
@@ -72,7 +93,7 @@ export async function createTest(req, res, next) {
       image: image || null,
       analyzedOn,
       score: typeof aiAnalysis.score === 'number' ? aiAnalysis.score : 80,
-      overallStatus: aiAnalysis.overallStatus || 'Good',
+      overallStatus: normalizeSt(aiAnalysis.overallStatus),
       confidence: typeof aiAnalysis.confidence === 'number' ? aiAnalysis.confidence : 91,
       confidenceInterval: (aiAnalysis.confidenceInterval &&
         typeof aiAnalysis.confidenceInterval.min === 'number' &&
@@ -90,7 +111,7 @@ export async function createTest(req, res, next) {
       costOfPoorQuality: aiAnalysis.costOfPoorQuality || {},
       disclaimer: aiAnalysis.disclaimer || 'Screening estimate for management decision support. Not a regulatory laboratory assay.',
       aiModelUsed: aiAnalysis.aiModelUsed || 'gemini-3.5-flash',
-      parameters: aiAnalysis.parameters,
+      parameters: Object.keys(cleanParameters).length > 0 ? cleanParameters : aiAnalysis.parameters,
       keyIndicators: aiAnalysis.keyIndicators || [],
       advisories: aiAnalysis.advisories || [],
       recommendations: aiAnalysis.recommendations || '',
