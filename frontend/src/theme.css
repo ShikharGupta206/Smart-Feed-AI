@@ -1816,4 +1816,328 @@ html.dark .bot-markdown blockquote,
   }
 }
 
+/* ─────────────────────────────────────────────
+   COMPREHENSIVE DARK MODE SYSTEM (HIGH CONTRAST & MAXIMUM VISIBILITY)
+───────────────────────────────────────────── */
+html.dark,
+.dark-root,
+.dark {
+  --bg-canvas: #07170e;
+  --bg-surface: #0e291b;
+  --bg-muted: #133924;
+
+  --ink-900: #f8fafc;
+  --ink-700: #e2e8f0;
+  --ink-500: #94a3b8;
+  --ink-400: #cbd5e1;
+
+  --border-light: #164329;
+  --border-card: #1c5232;
+
+  --shadow-subtle: 0 1px 3px rgba(0,0,0,0.4);
+  --shadow-card: 0 4px 16px rgba(0,0,0,0.5);
+
+  color: #f1f5f9;
+  background-color: #07170e;
+}
+
+html.dark body,
+.dark-root body {
+  background: #07170e;
+  color: #f1f5f9;
+}
+
+/* Shell & Navigation */
+html.dark .main,
+.dark-root .main {
+  background: #07170e;
+  color: #f1f5f9;
+}
+
+html.dark .topbar,
+.dark-root .topbar {
+  background: #0a2114;
+  border-bottom: 1px solid #164329;
+}
+
+html.dark .topbar-title-wrap h2,
+.dark-root .topbar-title-wrap h2 {
+  color: #ffffff;
+}
+
+html.dark .topbar-date-badge,
+.dark-root .topbar-date-badge {
+  background: #0e2e1c;
+  border-color: #1a4d2e;
+  color: #86efac;
+}
+
+html.dark .topbar-icon-btn,
+.dark-root .topbar-icon-btn {
+  background: #0e2e1c;
+  border-color: #1a4d2e;
+  color: #e2e8f0;
+}
+html.dark .topbar-icon-btn:hover,
+.dark-root .topbar-icon-btn:hover {
+  background: #143d26;
+  color: #ffffff;
+}
+
+html.dark .topbar-user-pill,
+.dark-root .topbar-user-pill {
+  background: #0e2e1c;
+}
+html.dark .topbar-user-details b,
+.dark-root .topbar-user-details b {
+  color: #ffffff;
+}
+html.dark .topbar-user-details small,
+.dark-root .topbar-user-details small {
+  color: #86efac;
+}
+
+/* Page Headings & Typography */
+html.dark .page-heading h1,
+.dark-root .page-heading h1 {
+  color: #ffffff;
+}
+
+html.dark .page-heading p,
+.dark-root .page-heading p {
+  color: #94a3b8;
+}
+
+/* Cards & Panels */
+html.dark .card,
+.dark-root .card {
+  background: #0e291b;
+  border-color: #1c5232;
+  color: #f1f5f9;
+}
+
+html.dark .card-head b,
+.dark-root .card-head b {
+  color: #ffffff;
+}
+
+html.dark .card b,
+.dark-root .card b {
+  color: #ffffff;
+}
+
+html.dark .stat-metric-card,
+.dark-root .stat-metric-card {
+  background: #0e291b;
+  border-color: #1c5232;
+  color: #f1f5f9;
+}
+
+html.dark .stat-metric-card small,
+.dark-root .stat-metric-card small {
+  color: #94a3b8;
+}
+
+html.dark .stat-metric-value-row b,
+.dark-root .stat-metric-value-row b {
+  color: #ffffff;
+}
+
+/* Data Tables */
+html.dark .table-container,
+.dark-root .table-container {
+  background: #0e291b;
+  border-color: #1c5232;
+}
+
+html.dark .data-table th,
+.dark-root .data-table th {
+  background: #081d11;
+  color: #94a3b8;
+  border-bottom: 1px solid #164329;
+}
+
+html.dark .data-table td,
+.dark-root .data-table td {
+  color: #e2e8f0;
+  border-bottom: 1px solid #164329;
+}
+
+html.dark .data-table td b,
+.dark-root .data-table td b {
+  color: #ffffff;
+}
+
+html.dark .data-table tr:hover td,
+.dark-root .data-table tr:hover td {
+  background: #123823;
+}
+
+html.dark .data-table tfoot tr,
+.dark-root .data-table tfoot tr {
+  background: #081d11 !important;
+}
+
+/* Form inputs & textareas */
+html.dark .field-input,
+.dark-root .field-input {
+  background: #081d11;
+  border: 1px solid #1c5232;
+  color: #ffffff;
+}
+
+html.dark .field-input:focus,
+.dark-root .field-input:focus {
+  border-color: #22c55e;
+  background: #0c2b1a;
+}
+
+html.dark .field-label,
+.dark-root .field-label {
+  color: #cbd5e1;
+}
+
+html.dark select.field-input option,
+.dark-root select.field-input option {
+  background: #081d11;
+  color: #ffffff;
+}
+
+/* Dropzone & Upload */
+html.dark .upload-dropzone,
+.dark-root .upload-dropzone {
+  background: #081d11;
+  border-color: #1c5232;
+}
+html.dark .upload-dropzone:hover,
+.dark-root .upload-dropzone:hover {
+  background: #0c2b1a;
+  border-color: #22c55e;
+}
+html.dark .upload-cloud-icon,
+.dark-root .upload-cloud-icon {
+  background: #113622;
+  color: #86efac;
+}
+
+/* Buttons */
+html.dark .button.secondary,
+.dark-root .button.secondary {
+  background: #113622;
+  border-color: #1c5232;
+  color: #e2e8f0;
+}
+
+html.dark .button.secondary:hover,
+.dark-root .button.secondary:hover {
+  background: #184c2f;
+  color: #ffffff;
+  border-color: #22c55e;
+}
+
+/* Modals */
+html.dark .modal-backdrop,
+.dark-root .modal-backdrop {
+  background: rgba(0, 0, 0, 0.82);
+}
+
+html.dark .modal-box,
+.dark-root .modal-box {
+  background: #0a2315;
+  border: 1px solid #1c5232;
+  color: #f1f5f9;
+}
+
+html.dark .modal-header,
+.dark-root .modal-header {
+  border-bottom: 1px solid #164329;
+}
+
+html.dark .modal-header h3,
+.dark-root .modal-header h3 {
+  color: #ffffff;
+}
+
+/* Score details & Score Radial */
+html.dark .score-details-table td,
+.dark-root .score-details-table td {
+  color: #e2e8f0;
+  border-bottom: 1px solid #164329;
+}
+
+html.dark .score-details-table td b,
+.dark-root .score-details-table td b {
+  color: #ffffff;
+}
+
+/* Assistant Chat & Bot Messages */
+html.dark .chat-msg-bot,
+.dark-root .chat-msg-bot {
+  background: #0a2315;
+  border: 1px solid #1c5232;
+  color: #e2e8f0;
+}
+
+html.dark .chat-msg-user,
+.dark-root .chat-msg-user {
+  background: #15803d;
+  color: #ffffff;
+}
+
+html.dark .chat-input-bar,
+.dark-root .chat-input-bar {
+  background: #0a2315;
+  border: 1px solid #1c5232;
+}
+
+/* Silage Coach */
+html.dark .coach-stage-card,
+.dark-root .coach-stage-card {
+  background: #0e291b;
+  border-color: #1c5232;
+}
+
+html.dark .coach-checklist-item,
+.dark-root .coach-checklist-item {
+  background: #081d11;
+  border-color: #164329;
+  color: #e2e8f0;
+}
+
+/* Milk Yield */
+html.dark .yield-stat-box,
+.dark-root .yield-stat-box {
+  background: #081d11;
+  border-color: #164329;
+}
+
+/* Landing Page Dark Mode Overrides */
+html.dark .landing-nav,
+.dark-root .landing-nav {
+  background: #0a2114;
+  border-bottom: 1px solid #164329;
+}
+html.dark .landing-nav-links a,
+.dark-root .landing-nav-links a {
+  color: #cbd5e1;
+}
+html.dark .landing-nav-links a:hover,
+.dark-root .landing-nav-links a:hover {
+  color: #4ade80;
+}
+html.dark .landing-ribbon,
+.dark-root .landing-ribbon {
+  background: #0a2114;
+  border-color: #164329;
+}
+html.dark .hero-title,
+.dark-root .hero-title {
+  color: #ffffff;
+}
+html.dark .hero-desc,
+.dark-root .hero-desc {
+  color: #cbd5e1;
+}
+
+
 
