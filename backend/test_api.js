@@ -1,6 +1,6 @@
 async function runTests() {
   const BASE_URL = 'http://localhost:8000'
-  console.log('🚀 Running Complete SmartFeed AI Audit & Verification Suite...\n')
+  console.log(' Running Complete SmartFeed AI Audit & Verification Suite...\n')
 
   let passed = 0
   let failed = 0
