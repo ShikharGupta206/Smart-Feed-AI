@@ -11,8 +11,8 @@ function getGenAIClient() {
 
 // Valid Gemini API model identifiers — ordered by availability preference (most stable first)
 const SUPPORTED_MODELS = [
-  'gemini-3.5-flash',
   'gemini-3.5-flash-lite',
+  'gemini-3.5-flash',
   'gemini-3.7-flash',
   'gemini-3.6-flash',
   'gemini-flash-latest'

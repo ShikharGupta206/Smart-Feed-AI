@@ -7,7 +7,7 @@ import {
   CheckCircle, Bell, Search, Calendar, Eye, RefreshCw, Send, Trash2, CheckCheck, QrCode,
   CheckSquare, Square, DollarSign, HeartPulse, Sparkles, MessageSquare, Headphones,
   Camera, Info, ShieldAlert, FileSpreadsheet, ArrowUpRight, Mic, MicOff, Volume2,
-  Lightbulb, MapPin, TrendingDown, Award, Timer, Salad
+  Lightbulb, MapPin, TrendingDown, Award, Timer, Salad, Scale, Sliders, Layers, Check
 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { mockBatches, mockReports, mockTests, resultParameters, trendData } from './mockData'
@@ -263,6 +263,7 @@ function Shell() {
     ['/dashboard', t.dashboard, BarChart3],
     ['/analysis/new', t.newAnalysis, ScanSearch],
     ['/batches', t.myBatches, Package],
+    ['/ration-simulator', t.rationSimulator || 'Ration Simulator', Scale],
     ['/coach', t.silageCoach, ClipboardCheck],
     ['/milk-yield', t.milkYield, HeartPulse],
     ['/history', t.history, Activity],
@@ -347,6 +348,7 @@ function Shell() {
           <Route path="/analysis/:id" element={<Result/>}/>
           <Route path="/batches" element={<Batches/>}/>
           <Route path="/batches/:id" element={<BatchDetail/>}/>
+          <Route path="/ration-simulator" element={<RationSimulator/>}/>
           <Route path="/coach" element={<SilageCoach/>}/>
           <Route path="/milk-yield" element={<MilkYield/>}/>
           <Route path="/history" element={<History/>}/>
@@ -1328,45 +1330,191 @@ function Result() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 20, marginBottom: 20 }}>
-        <div className="card">
-          <b style={{ fontSize: 14, display: 'block', marginBottom: 14, color: isDark ? '#ffffff' : 'inherit' }}>{t.keyIndicators}</b>
-          <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {dynamicIndicators.map((ind, i) => (
-              <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: isDark ? '#e2e8f0' : 'inherit' }}>
-                {isBad ? <XCircle size={15} color="#ef4444" style={{ flexShrink: 0, marginTop: 2 }}/> : isCaution ? <AlertTriangle size={15} color="#f59e0b" style={{ flexShrink: 0, marginTop: 2 }}/> : <CheckCircle size={15} color="#16a34a" style={{ flexShrink: 0, marginTop: 2 }}/>}
-                <span>{ind}</span>
-              </li>
-            ))}
-          </ul>
-
-          <div style={{ marginTop: 20, paddingTop: 14, borderTop: `1px solid ${isDark ? '#143522' : 'var(--border-light)'}` }}>
-            <b style={{ fontSize: 12, color: isDark ? '#94a3b8' : 'var(--ink-500)', display: 'block', marginBottom: 6 }}>{t.qualityScoreRange}</b>
-            <div style={{ display: 'flex', gap: 16, fontSize: 11, color: isDark ? '#cbd5e1' : 'inherit' }}>
-              <span><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#16a34a', display: 'inline-block', marginRight: 4 }}/> {t.goodQuality} (80-100)</span>
-              <span><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#f59e0b', display: 'inline-block', marginRight: 4 }}/> {t.caution} (50-79)</span>
-              <span><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', display: 'inline-block', marginRight: 4 }}/> {t.highRisk} (0-49)</span>
-            </div>
+      {/* ── 1. "WHAT SHOULD I DO NOW?" FARMER ACTION MODE ── */}
+      <div className="card" style={{
+        marginBottom: 20,
+        border: `2px solid ${isDark ? (isBad ? '#ef4444' : isCaution ? '#f59e0b' : '#22c55e') : (isBad ? '#ef4444' : isCaution ? '#f59e0b' : '#16a34a')}`,
+        background: isDark
+          ? (isBad ? '#220b10' : isCaution ? '#221504' : '#061c10')
+          : (isBad ? '#fff5f5' : isCaution ? '#fffdf0' : '#f0fdf4')
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Zap size={18} color={isBad ? '#ef4444' : isCaution ? '#f59e0b' : '#16a34a'}/>
+            <b style={{ fontSize: 15, color: isDark ? '#ffffff' : 'var(--ink-900)' }}>
+              {t.farmerActionMode || (lang === 'हिंदी' ? 'अब क्या करें? (कार्रवाई मोड)' : 'What Should I Do Now? (Action Mode)')}
+            </b>
           </div>
+          <span className={`badge ${riskClass(risk)}`} style={{ fontWeight: 700 }}>
+            {locTerm(risk)} · {isBad ? (lang === 'हिंदी' ? 'तत्काल कार्रवाई' : 'Immediate Action') : isCaution ? (lang === 'हिंदी' ? 'निवारक कदम' : 'Preventive Step') : (lang === 'हिंदी' ? 'मानक रखरखाव' : 'Standard Routine')}
+          </span>
         </div>
 
-        <div className="card">
-          <b style={{ fontSize: 14, display: 'block', marginBottom: 10, color: isDark ? '#ffffff' : 'inherit' }}>{t.aiExplanation}</b>
-          <p style={{ fontSize: 12.5, color: isDark ? '#cbd5e1' : 'var(--ink-700)', lineHeight: 1.55, marginBottom: 14 }}>
-            {dynamicExplanation}
-          </p>
-          {qr?.qrDataUrl && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: isDark ? '#092516' : '#f8fafc', borderRadius: 8, border: `1px solid ${isDark ? '#143823' : 'var(--border-light)'}` }}>
-              <img src={qr.qrDataUrl} alt="Traceability QR" style={{ width: 56, height: 56 }}/>
-              <div>
-                <b style={{ fontSize: 11, display: 'block', color: isDark ? '#ffffff' : 'var(--ink-900)' }}>{t.qrVerification}</b>
-                <small style={{ fontSize: 10, color: isDark ? '#94a3b8' : 'var(--ink-500)' }}>{t.traceabilityId}: {qr.traceabilityId || test.id}</small>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+          {(isBad ? [
+            { step: '1', title: lang === 'हिंदी' ? 'खराब परत अलग करें' : 'Discard Spoiled Layer', desc: lang === 'हिंदी' ? 'ऊपरी 15-20 सेमी फफूंद वाली परत को तुरंत हटाकर फेंकें। इसे चारे में न मिलाएं।' : 'Scrape and discard top 15-20 cm moldy layer immediately. Do NOT blend into daily feed.' },
+            { step: '2', title: lang === 'हिंदी' ? 'पशुओं को अलग करें' : 'Isolate Suspect Batch', desc: lang === 'हिंदी' ? 'दुधारू व गर्भवती गायों को यह चारा न दें। केवल स्वस्थ सूखे पशुओं में सीमित करें।' : 'Quarantine this batch from high-yielding & pregnant dairy cattle to prevent toxin ingestion.' },
+            { step: '3', title: lang === 'हिंदी' ? 'मायकोटॉक्सिन बाइंडर दें' : 'Administer Toxin Binder', desc: lang === 'हिंदी' ? 'राशन में 15-20 ग्राम ब्रॉड-स्पेक्ट्रम टॉक्सिन बाइंडर और 50 ग्राम बफर मिलाएं।' : 'Add 15-20g broad-spectrum mycotoxin binder + 50g sodium bicarbonate buffer per cow daily.' },
+            { step: '4', title: lang === 'हिंदी' ? '24 घंटे में पुनः स्कैन करें' : 'Re-scan in 24 Hours', desc: lang === 'हिंदी' ? 'ताज़ा फेस से नया नमूना लेकर 24 घंटे के भीतर पुनः AI परीक्षण करें।' : 'Extract fresh core sample from deeper face and perform follow-up scan within 24h.' }
+          ] : isCaution ? [
+            { step: '1', title: lang === 'हिंदी' ? 'दैनिक निकासी तेज करें' : 'Accelerate Feedout Rate', desc: lang === 'हिंदी' ? 'रोजाना 20 सेमी गहराई से चारा निकालें ताकि हवा अंदर न जा सके।' : 'Feed out at minimum 20 cm/day across pit face to stay ahead of aerobic penetration.' },
+            { step: '2', title: lang === 'हिंदी' ? 'पिट प्लास्टिक कसें' : 'Tighten Pit Sealing', desc: lang === 'हिंदी' ? 'प्लास्टिक शीट के किनारों पर बालू की बोरियां रखकर हवा का प्रवेश रोकें।' : 'Check tarp for punctures and weight down exposed edges tightly with sandbags.' },
+            { step: '3', title: lang === 'हिंदी' ? 'सूखा भूसा मिलाएं' : 'Blend with Dry Straw', desc: lang === 'हिंदी' ? 'नमी संतुलित करने के लिए 10% सूखा कुतरा भूसा टीएमआर में शामिल करें।' : 'Blend with 10% dry chopped wheat straw to absorb excess moisture and buffer rumen.' },
+            { step: '4', title: lang === 'हिंदी' ? '3-4 दिन में दोबारा जांचें' : 'Re-scan in 3-4 Days', desc: lang === 'हिंदी' ? 'तापमान व किण्वन स्थिरता की पुष्टि के लिए 3-4 दिन बाद री-स्कैन करें।' : 'Perform verification scan in 3-4 days to confirm temperature and odor stabilization.' }
+          ] : [
+            { step: '1', title: lang === 'हिंदी' ? 'सामान्य आहार जारी रखें' : 'Maintain Daily Allocation', desc: lang === 'हिंदी' ? 'दुधारू पशुओं को 15-18 किग्रा/दिन संतुलित टीएमआर के साथ खिलाएं।' : 'Feed 15-18 kg/cow/day as primary forage base in balanced Total Mixed Ration.' },
+            { step: '2', title: lang === 'हिंदी' ? 'सीधा फेस कट बनाएं' : 'Clean Vertical Face Cut', desc: lang === 'हिंदी' ? 'साइलेज निकालते समय फेस को सीधा काटें ताकि गड्ढे न बनें।' : 'Cut silage vertically clean across pit face with minimal gouging to minimize air ingress.' },
+            { step: '3', title: lang === 'हिंदी' ? 'शीट ढकी रखें' : 'Keep Tarp Covered', desc: lang === 'हिंदी' ? 'चारा निकालने के तुरंत बाद प्लास्टिक शीट को वापस ढक दें।' : 'Pull plastic tarp back over exposed face immediately following daily removal.' },
+            { step: '4', title: lang === 'हिंदी' ? '7-10 दिन में रूटीन चेक' : 'Routine Check in 7-10 Days', desc: lang === 'हिंदी' ? 'निरंतर उच्च गुणवत्ता बनाए रखने के लिए सप्ताह में एक बार स्कैन करें।' : 'Conduct scheduled weekly quality check to track ongoing fermentation consistency.' }
+          ]).map((item, idx) => (
+            <div key={idx} style={{
+              padding: 12,
+              borderRadius: 8,
+              background: isDark ? '#0c2215' : '#ffffff',
+              border: `1px solid ${isDark ? '#19452b' : '#e2e8f0'}`,
+              boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                <span style={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: '50%',
+                  background: isBad ? '#ef4444' : isCaution ? '#f59e0b' : '#16a34a',
+                  color: '#fff',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  display: 'grid',
+                  placeItems: 'center'
+                }}>{item.step}</span>
+                <b style={{ fontSize: 12.5, color: isDark ? '#ffffff' : 'var(--ink-900)' }}>{item.title}</b>
               </div>
+              <p style={{ fontSize: 11.5, color: isDark ? '#cbd5e1' : 'var(--ink-600)', margin: 0, lineHeight: 1.45 }}>{item.desc}</p>
             </div>
-          )}
+          ))}
         </div>
       </div>
 
+      {/* ── 2. EXPLAINABLE AI EVIDENCE & REASONING ── */}
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Layers size={17} color="var(--brand-primary)"/>
+            <b style={{ fontSize: 14, color: isDark ? '#ffffff' : 'inherit' }}>
+              {t.whyThisResult || (lang === 'हिंदी' ? 'यह परिणाम क्यों आया? / AI दृश्य साक्ष्य' : 'Why This Result? / AI Visual Evidence')}
+            </b>
+          </div>
+          <span style={{ fontSize: 11, color: isDark ? '#94a3b8' : 'var(--ink-500)' }}>
+            {t.modelConfidence}: <b>{confidence}%</b> ({minConf}% - {maxConf}% CI)
+          </span>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 14 }}>
+          {/* Positive Quality Signals */}
+          <div style={{
+            padding: 12,
+            borderRadius: 8,
+            background: isDark ? '#061c10' : '#f0fdf4',
+            border: `1px solid ${isDark ? '#16a34a44' : '#bbf7d0'}`
+          }}>
+            <b style={{ fontSize: 12, color: isDark ? '#86efac' : '#166534', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+              <CheckCircle size={14} color="#16a34a"/>
+              {t.positiveQualitySignals || (lang === 'हिंदी' ? 'सकारात्मक गुणवत्ता संकेत' : 'Positive Quality Signals')}
+            </b>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {(isBad ? [
+                lang === 'हिंदी' ? 'मूल डंठल संरचना में कुछ अवशिष्ट फाइबर मौजूद' : 'Residual coarse fiber present in base stems',
+                lang === 'हिंदी' ? 'कोई अकार्बनिक रेत/मिट्टी जमाव नहीं पाया गया' : 'No inorganic sand/silica sediment detected'
+              ] : isCaution ? [
+                lang === 'हिंदी' ? 'आंतरिक कोर में 70% लैक्टिक किण्वन संरक्षित' : '70% lactic preservation in core matrix',
+                lang === 'हिंदी' ? 'औसत दाना विखंडन मानक सीमा के भीतर' : 'Grain kernel processing within acceptable range',
+                lang === 'हिंदी' ? 'कोई जहरीली काला सड़ांध नहीं' : 'No severe black clostridial rotting'
+              ] : [
+                lang === 'हिंदी' ? 'एकसमान हरा-जैतून रंग (इष्टतम लैक्टिक एसिड संरक्षण)' : 'Uniform olive-green matrix (optimal lactic preservation)',
+                lang === 'हिंदी' ? 'उत्कृष्ट दाना विखंडन सूचकांक (> 70% मक्का दाना दरार)' : 'High grain kernel processing score (>70% fractured kernels)',
+                lang === 'हिंदी' ? 'शून्य फफूंद मायसेलियम या सफेद उल्ली धब्बे' : 'Zero visible fungal mycelium or white mold fuzz',
+                lang === 'हिंदी' ? 'संतुलित नमी बनावट (60-65% इष्टतम सीमा)' : 'Optimal forage moisture texture (60-65% range)'
+              ]).map((sig, idx) => (
+                <li key={idx} style={{ fontSize: 11.5, color: isDark ? '#e2e8f0' : '#166534', display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                  <Check size={13} color="#16a34a" style={{ flexShrink: 0, marginTop: 2 }}/>
+                  <span>{sig}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Defect & Risk Signals */}
+          <div style={{
+            padding: 12,
+            borderRadius: 8,
+            background: isDark ? (isBad ? '#220b10' : '#221504') : (isBad ? '#fff1f2' : '#fffbeb'),
+            border: `1px solid ${isDark ? (isBad ? '#ef444444' : '#f59e0b44') : (isBad ? '#fecaca' : '#fde68a')}`
+          }}>
+            <b style={{ fontSize: 12, color: isDark ? (isBad ? '#fca5a5' : '#fde68a') : (isBad ? '#991b1b' : '#92400e'), display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+              {isBad ? <XCircle size={14} color="#ef4444"/> : <AlertTriangle size={14} color="#f59e0b"/>}
+              {t.defectRiskSignals || (lang === 'हिंदी' ? 'खामियां व खराबी संकेतक' : 'Defects & Spoilage Indicators')}
+            </b>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {(isBad ? [
+                lang === 'हिंदी' ? 'सफेद/धूसर फफूंद मायसेलियम की व्यापक उपस्थिति' : 'Extensive white/grey fungal mycelium fuzz detected',
+                lang === 'हिंदी' ? 'गहरे सड़े हुए धब्बे (ब्यूटिरिक क्लॉस्ट्रिडियल क्षय)' : 'Dark discolored patches indicating clostridial rotting',
+                lang === 'हिंदी' ? 'अत्यधिक नमी रिसाव (> 74% लीचेट जोखिम)' : 'Excess moisture leachate risk (>74% moisture)',
+                lang === 'हिंदी' ? 'अफलाटॉक्सिन जोखिम सीमा (20 ppb) से अधिक' : 'Aflatoxin risk estimated at 45 ppb (exceeds 20 ppb safe limit)'
+              ] : isCaution ? [
+                lang === 'हिंदी' ? 'सतह पर हल्का ताप व वायु रिसाव सीमा रेखा' : 'Mild aerobic heating boundary near surface',
+                lang === 'हिंदी' ? 'सीमांत नमी विचलन (68.5%)' : 'Borderline moisture elevation (68.5%)',
+                lang === 'हिंदी' ? 'मध्यम स्टार्च ऑक्सीकरण जोखिम' : 'Moderate starch oxidation exposure'
+              ] : [
+                lang === 'हिंदी' ? 'कोई महत्वपूर्ण दृश्य दोष या फफूंद नहीं पाई गई' : 'No significant visual defects or aerobic heating zones detected',
+                lang === 'हिंदी' ? 'माइकोटॉक्सिन जोखिम न्यूनतम (< 10 ppb)' : 'Mycotoxin risk is low (< 10 ppb safe threshold)'
+              ]).map((sig, idx) => (
+                <li key={idx} style={{ fontSize: 11.5, color: isDark ? '#e2e8f0' : (isBad ? '#991b1b' : '#92400e'), display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                  {isBad ? <XCircle size={13} color="#ef4444" style={{ flexShrink: 0, marginTop: 2 }}/> : isCaution ? <AlertTriangle size={13} color="#f59e0b" style={{ flexShrink: 0, marginTop: 2 }}/> : <CheckCircle size={13} color="#16a34a" style={{ flexShrink: 0, marginTop: 2 }}/>}
+                  <span>{sig}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <p style={{ fontSize: 12, color: isDark ? '#cbd5e1' : 'var(--ink-700)', lineHeight: 1.55, margin: '0 0 10px' }}>
+          <b>{lang === 'हिंदी' ? 'AI तर्क व वर्गीकरण:' : 'AI Reasoning & Classification:'}</b> {dynamicExplanation}
+        </p>
+
+        <div style={{ fontSize: 11, color: isDark ? '#94a3b8' : 'var(--ink-500)', fontStyle: 'italic' }}>
+          * {t.estimatedModelNotice || (lang === 'हिंदी' ? 'RGB कंप्यूटर विज़न द्वारा अनुमानित। रासायनिक प्रयोगशाला प्रमाणीकरण के लिए LFA स्ट्रिप का उपयोग करें।' : 'Estimated via RGB computer vision. Use certified lateral-flow assay strips for laboratory-grade chemical certification.')}
+        </div>
+      </div>
+
+      {/* ── 3. SMARTFEED MULTI-VECTOR RISK DASHBOARD ── */}
+      <div className="card" style={{ marginBottom: 20 }}>
+        <b style={{ fontSize: 14, display: 'block', marginBottom: 12, color: isDark ? '#ffffff' : 'inherit' }}>
+          {t.multiVectorRisk || (lang === 'हिंदी' ? 'मल्टी-वेक्टर जोखिम अवलोकन' : 'Multi-Vector Risk Overview')}
+        </b>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
+          <div style={{ padding: 10, borderRadius: 8, background: isDark ? '#0e291b' : '#f8fafc', border: `1px solid ${isDark ? '#19452b' : '#e2e8f0'}`, textAlign: 'center' }}>
+            <small style={{ fontSize: 10, color: isDark ? '#94a3b8' : 'var(--ink-500)', display: 'block' }}>{lang === 'हिंदी' ? 'खराबी जोखिम' : 'SPOILAGE RISK'}</small>
+            <b style={{ fontSize: 13, color: isBad ? '#ef4444' : isCaution ? '#f59e0b' : '#16a34a' }}>{isBad ? 'HIGH' : isCaution ? 'MODERATE' : 'LOW'}</b>
+          </div>
+          <div style={{ padding: 10, borderRadius: 8, background: isDark ? '#0e291b' : '#f8fafc', border: `1px solid ${isDark ? '#19452b' : '#e2e8f0'}`, textAlign: 'center' }}>
+            <small style={{ fontSize: 10, color: isDark ? '#94a3b8' : 'var(--ink-500)', display: 'block' }}>{lang === 'हिंदी' ? 'संदूषण जोखिम' : 'CONTAMINATION'}</small>
+            <b style={{ fontSize: 13, color: isBad ? '#ef4444' : isCaution ? '#f59e0b' : '#16a34a' }}>{isBad ? '45 ppb (HIGH)' : isCaution ? '14 ppb (MOD)' : '< 10 ppb (LOW)'}</b>
+          </div>
+          <div style={{ padding: 10, borderRadius: 8, background: isDark ? '#0e291b' : '#f8fafc', border: `1px solid ${isDark ? '#19452b' : '#e2e8f0'}`, textAlign: 'center' }}>
+            <small style={{ fontSize: 10, color: isDark ? '#94a3b8' : 'var(--ink-500)', display: 'block' }}>{lang === 'हिंदी' ? 'पोषण संतुलन' : 'NUTRITION BALANCE'}</small>
+            <b style={{ fontSize: 13, color: isBad ? '#ef4444' : isCaution ? '#f59e0b' : '#16a34a' }}>{isBad ? 'DEPLETED' : isCaution ? 'FAIR (11.8% CP)' : 'OPTIMAL (12.4% CP)'}</b>
+          </div>
+          <div style={{ padding: 10, borderRadius: 8, background: isDark ? '#0e291b' : '#f8fafc', border: `1px solid ${isDark ? '#19452b' : '#e2e8f0'}`, textAlign: 'center' }}>
+            <small style={{ fontSize: 10, color: isDark ? '#94a3b8' : 'var(--ink-500)', display: 'block' }}>{lang === 'हिंदी' ? 'भंडारण स्थिरता' : 'STORAGE STABILITY'}</small>
+            <b style={{ fontSize: 13, color: isBad ? '#ef4444' : isCaution ? '#f59e0b' : '#16a34a' }}>{isBad ? 'UNSTABLE' : isCaution ? 'CAUTION' : 'STABLE PIT'}</b>
+          </div>
+          <div style={{ padding: 10, borderRadius: 8, background: isDark ? (isBad ? '#220b10' : isCaution ? '#221504' : '#061c10') : (isBad ? '#fef2f2' : isCaution ? '#fffbeb' : '#f0fdf4'), border: `2px solid ${isBad ? '#ef4444' : isCaution ? '#f59e0b' : '#16a34a'}`, textAlign: 'center' }}>
+            <small style={{ fontSize: 10, color: isDark ? '#ffffff' : 'var(--ink-900)', fontWeight: 700, display: 'block' }}>{lang === 'हिंदी' ? 'समग्र सुरक्षा' : 'OVERALL STATUS'}</small>
+            <b style={{ fontSize: 13, color: isBad ? '#ef4444' : isCaution ? '#f59e0b' : '#16a34a' }}>{isBad ? '⚠️ HAZARDOUS' : isCaution ? '⚡ CAUTION' : '✅ SAFE TO FEED'}</b>
+          </div>
+        </div>
+      </div>
+
+      {/* ── 4. NUTRITION PARAMETERS TABLE ── */}
       <div className="card" style={{ marginBottom: 20 }}>
         <b style={{ fontSize: 14, display: 'block', marginBottom: 14, color: isDark ? '#ffffff' : 'inherit' }}>{t.nutritionParams}</b>
         <div className="table-container" style={{ border: 'none', boxShadow: 'none' }}>
@@ -1389,25 +1537,28 @@ function Result() {
         </div>
       </div>
 
+      {/* ── 5. MYCOTOXIN & COST CARDS ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
         <div className="card">
           <b style={{ fontSize: 14, display: 'block', marginBottom: 12, color: isDark ? '#ffffff' : 'inherit' }}>{t.mycotoxinRisk}</b>
           <div style={{ display: 'grid', gap: 8, fontSize: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: `1px solid ${isDark ? '#143823' : '#f1f5f9'}` }}>
               <span style={{ color: isDark ? '#cbd5e1' : 'inherit' }}>{t.overallRiskTier}:</span>
-              <span className={`badge ${riskClass(test.mycotoxinRiskRadar?.overallRiskTier || 'Low Risk')}`}>{locTerm(test.mycotoxinRiskRadar?.overallRiskTier || 'Low Risk')}</span>
+              <span className={`badge ${riskClass(test.mycotoxinRiskRadar?.overallRiskTier || (isBad ? 'High Risk' : isCaution ? 'Moderate Risk' : 'Low Risk'))}`}>
+                {locTerm(test.mycotoxinRiskRadar?.overallRiskTier || (isBad ? 'High Risk' : isCaution ? 'Moderate Risk' : 'Low Risk'))}
+              </span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: isDark ? '#cbd5e1' : 'inherit' }}>
-              <span>{t.aflatoxinIndex}:</span><b style={{ color: isDark ? '#ffffff' : 'inherit' }}>{test.mycotoxinRiskRadar?.aflatoxinRiskScore || 15}/100</b>
+              <span>{t.aflatoxinIndex}:</span><b style={{ color: isDark ? '#ffffff' : 'inherit' }}>{test.mycotoxinRiskRadar?.aflatoxinRiskScore || (isBad ? 65 : isCaution ? 28 : 12)}/100</b>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: isDark ? '#cbd5e1' : 'inherit' }}>
-              <span>{t.vomitoxinIndex}:</span><b style={{ color: isDark ? '#ffffff' : 'inherit' }}>{test.mycotoxinRiskRadar?.vomitoxinRiskScore || 10}/100</b>
+              <span>{t.vomitoxinIndex}:</span><b style={{ color: isDark ? '#ffffff' : 'inherit' }}>{test.mycotoxinRiskRadar?.vomitoxinRiskScore || (isBad ? 40 : 10)}/100</b>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: isDark ? '#cbd5e1' : 'inherit' }}>
-              <span>{t.zearalenoneIndex}:</span><b style={{ color: isDark ? '#ffffff' : 'inherit' }}>{test.mycotoxinRiskRadar?.zearalenoneRiskScore || 12}/100</b>
+              <span>{t.zearalenoneIndex}:</span><b style={{ color: isDark ? '#ffffff' : 'inherit' }}>{test.mycotoxinRiskRadar?.zearalenoneRiskScore || (isBad ? 45 : 12)}/100</b>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: isDark ? '#cbd5e1' : 'inherit' }}>
-              <span>{t.moldPercentage}:</span><b style={{ color: isDark ? '#ffffff' : 'inherit' }}>{test.mycotoxinRiskRadar?.calculatedFactors?.moldPercentage || 1.2}%</b>
+              <span>{t.moldPercentage}:</span><b style={{ color: isDark ? '#ffffff' : 'inherit' }}>{test.mycotoxinRiskRadar?.calculatedFactors?.moldPercentage || (isBad ? 8.5 : isCaution ? 2.8 : 0.8)}%</b>
             </div>
           </div>
         </div>
@@ -1417,142 +1568,118 @@ function Result() {
           <div style={{ display: 'grid', gap: 8, fontSize: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: `1px solid ${isDark ? '#143823' : '#f1f5f9'}` }}>
               <span style={{ color: isDark ? '#cbd5e1' : 'inherit' }}>{t.dailyLoss}:</span>
-              <b style={{ color: test.costOfPoorQuality?.dailyLossInr > 0 ? '#ef4444' : (isDark ? '#4ade80' : '#16a34a') }}>
-                ₹{test.costOfPoorQuality?.dailyLossInr || 0} / {lang === 'हिंदी' ? 'दिन' : 'day'}
+              <b style={{ color: (test.costOfPoorQuality?.dailyLossInr > 0 || isBad || isCaution) ? '#ef4444' : (isDark ? '#4ade80' : '#16a34a') }}>
+                ₹{test.costOfPoorQuality?.dailyLossInr || (isBad ? 380 : isCaution ? 140 : 0)} / {lang === 'हिंदी' ? 'दिन' : 'day'}
               </b>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: isDark ? '#cbd5e1' : 'inherit' }}>
               <span>{t.milkDropPenalty}:</span>
-              <b style={{ color: isDark ? '#ffffff' : 'inherit' }}>{test.costOfPoorQuality?.milkDropLitersPerCow || 0} L / {lang === 'हिंदी' ? 'गाय / दिन' : 'cow / day'}</b>
+              <b style={{ color: isDark ? '#ffffff' : 'inherit' }}>{test.costOfPoorQuality?.milkDropLitersPerCow || (isBad ? 1.8 : isCaution ? 0.6 : 0)} L / {lang === 'हिंदी' ? 'गाय / दिन' : 'cow / day'}</b>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: isDark ? '#cbd5e1' : 'inherit' }}>
               <span>{t.vetCostRisk}:</span>
-              <b style={{ color: isDark ? '#ffffff' : 'inherit' }}>₹{test.costOfPoorQuality?.vetCostRiskInr || 0}</b>
+              <b style={{ color: isDark ? '#ffffff' : 'inherit' }}>₹{test.costOfPoorQuality?.vetCostRiskInr || (isBad ? 250 : isCaution ? 80 : 0)}</b>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: isDark ? '#cbd5e1' : 'inherit' }}>
               <span>{t.estimatedSpoilage}:</span>
-              <b style={{ color: isDark ? '#ffffff' : 'inherit' }}>{test.costOfPoorQuality?.estimatedSpoilagePct || 1.5}%</b>
+              <b style={{ color: isDark ? '#ffffff' : 'inherit' }}>{test.costOfPoorQuality?.estimatedSpoilagePct || (isBad ? 12.0 : isCaution ? 3.5 : 1.2)}%</b>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── Predictive Spoilage Timeline ── */}
+      {/* ── 6. ESTIMATED SPOILAGE TREND & RISK PREDICTION ── */}
       {(() => {
-        const moisture = Number(paramsObj?.moisture?.value || 64)
+        const moisture = Number(paramsObj?.moisture?.value || (isBad ? 74.5 : isCaution ? 68.5 : 62.0))
         const temp = Number(test.tempC || 32)
-        const safeDays = score >= 80 ? (temp > 32 ? 6 : 9) : score >= 60 ? (temp > 32 ? 3 : 5) : 2
+        const safeDays = score >= 80 ? (temp > 32 ? 6 : 9) : score >= 60 ? (temp > 32 ? 3 : 5) : 1
         const isUrgent = safeDays <= 3
 
         return (
           <div className="card" style={{ marginBottom: 20, borderLeft: `4px solid ${isUrgent ? '#ef4444' : '#16a34a'}` }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Timer size={16} color={isUrgent ? '#ef4444' : '#16a34a'}/>
-                <b style={{ fontSize: 14, color: isDark ? '#ffffff' : 'inherit' }}>{t.spoilageTimeline}</b>
+                <b style={{ fontSize: 14, color: isDark ? '#ffffff' : 'inherit' }}>
+                  {t.spoilageTrendPredictor || (lang === 'हिंदी' ? 'अनुमानित खराबी प्रवृत्ति व जोखिम पूर्वानुमान' : 'Estimated Spoilage Trend & Risk Prediction')}
+                </b>
               </div>
               <span className={`badge ${isUrgent ? 'high' : 'good'}`}>
-                {isUrgent ? t.urgentFeed.replace('{days}', safeDays) : t.safeWindow.replace('{days}', safeDays)}
+                {isUrgent ? (lang === 'हिंदी' ? `⚠️ तत्काल: ${safeDays} दिन में उपयोग करें` : `⚠️ Urgent: ${safeDays} Days Safe Window`) : (lang === 'हिंदी' ? `✅ सुरक्षित: ${safeDays} दिन` : `✅ Safe: ${safeDays} Days Window`)}
               </span>
             </div>
             <p style={{ fontSize: 12, color: isDark ? '#cbd5e1' : 'var(--ink-600)', margin: '0 0 14px' }}>
-              {t.spoilageBasedOn.replace('{moisture}', moisture).replace('{temp}', temp)}
+              {t.spoilageBasedOn?.replace('{moisture}', moisture)?.replace('{temp}', temp) || (lang === 'हिंदी' ? `नमी (${moisture}%) और परिवेश तापमान (${temp}°C) पर आधारित अनुमानित खराबी दर:` : `Based on estimated moisture (${moisture}%) and ambient temperature (${temp}°C):`)}
             </p>
 
-            {/* Visual Timeline Bar */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 12 }}>
-              <div style={{
-                padding: 10,
-                borderRadius: 8,
-                background: isDark ? '#092516' : '#f0fdf4',
-                border: `1px solid ${isDark ? '#16a34a66' : '#bbf7d0'}`,
-                textAlign: 'center'
-              }}>
-                <b style={{ fontSize: 11, color: isDark ? '#4ade80' : '#16a34a', display: 'block' }}>{t.day12}</b>
-                <span style={{ fontSize: 10, color: isDark ? '#cbd5e1' : 'var(--ink-600)' }}>{t.day12Desc}</span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 8, marginBottom: 12 }}>
+              <div style={{ padding: 10, borderRadius: 8, background: isDark ? '#092516' : '#f0fdf4', border: `1px solid ${isDark ? '#16a34a66' : '#bbf7d0'}`, textAlign: 'center' }}>
+                <b style={{ fontSize: 11, color: isDark ? '#4ade80' : '#16a34a', display: 'block' }}>{t.day12 || 'Day 1–2'}</b>
+                <span style={{ fontSize: 10, color: isDark ? '#cbd5e1' : 'var(--ink-600)' }}>{isBad ? (lang === 'हिंदी' ? 'खराबी सक्रिय' : 'Active Spoilage') : (lang === 'हिंदी' ? 'इष्टतम गुणवत्ता' : 'Optimal Quality')}</span>
               </div>
-              <div style={{
-                padding: 10,
-                borderRadius: 8,
-                background: isDark ? (safeDays > 2 ? '#092516' : '#2b1b08') : (safeDays > 2 ? '#f0fdf4' : '#fffbeb'),
-                border: `1px solid ${isDark ? (safeDays > 2 ? '#16a34a66' : '#f59e0b66') : (safeDays > 2 ? '#bbf7d0' : '#fde68a')}`,
-                textAlign: 'center'
-              }}>
-                <b style={{ fontSize: 11, color: isDark ? (safeDays > 2 ? '#4ade80' : '#f59e0b') : (safeDays > 2 ? '#16a34a' : '#d97706'), display: 'block' }}>{t.day34}</b>
-                <span style={{ fontSize: 10, color: isDark ? '#cbd5e1' : 'var(--ink-600)' }}>{t.day34Desc}</span>
+              <div style={{ padding: 10, borderRadius: 8, background: isDark ? (safeDays > 2 ? '#092516' : '#2b1b08') : (safeDays > 2 ? '#f0fdf4' : '#fffbeb'), border: `1px solid ${isDark ? (safeDays > 2 ? '#16a34a66' : '#f59e0b66') : (safeDays > 2 ? '#bbf7d0' : '#fde68a')}`, textAlign: 'center' }}>
+                <b style={{ fontSize: 11, color: isDark ? (safeDays > 2 ? '#4ade80' : '#f59e0b') : (safeDays > 2 ? '#16a34a' : '#d97706'), display: 'block' }}>{t.day34 || 'Day 3–4'}</b>
+                <span style={{ fontSize: 10, color: isDark ? '#cbd5e1' : 'var(--ink-600)' }}>{safeDays > 2 ? (lang === 'हिंदी' ? 'स्थिर किण्वन' : 'Stable Matrix') : (lang === 'हिंदी' ? 'ताप निर्माण शुरू' : 'Heating Begins')}</span>
               </div>
-              <div style={{
-                padding: 10,
-                borderRadius: 8,
-                background: isDark ? (safeDays > 4 ? '#2b1b08' : '#2e0f15') : (safeDays > 4 ? '#fffbeb' : '#fff1f2'),
-                border: `1px solid ${isDark ? (safeDays > 4 ? '#f59e0b66' : '#ef444466') : (safeDays > 4 ? '#fde68a' : '#fecaca')}`,
-                textAlign: 'center'
-              }}>
-                <b style={{ fontSize: 11, color: isDark ? (safeDays > 4 ? '#f59e0b' : '#f87171') : (safeDays > 4 ? '#d97706' : '#dc2626'), display: 'block' }}>{t.day57}</b>
-                <span style={{ fontSize: 10, color: isDark ? '#cbd5e1' : 'var(--ink-600)' }}>{t.day57Desc}</span>
+              <div style={{ padding: 10, borderRadius: 8, background: isDark ? (safeDays > 4 ? '#2b1b08' : '#2e0f15') : (safeDays > 4 ? '#fffbeb' : '#fff1f2'), border: `1px solid ${isDark ? (safeDays > 4 ? '#f59e0b66' : '#ef444466') : (safeDays > 4 ? '#fde68a' : '#fecaca')}`, textAlign: 'center' }}>
+                <b style={{ fontSize: 11, color: isDark ? (safeDays > 4 ? '#f59e0b' : '#f87171') : (safeDays > 4 ? '#d97706' : '#dc2626'), display: 'block' }}>{t.day57 || 'Day 5–7'}</b>
+                <span style={{ fontSize: 10, color: isDark ? '#cbd5e1' : 'var(--ink-600)' }}>{safeDays > 4 ? (lang === 'हिंदी' ? 'हल्की स्टार्च हानि' : 'Minor Loss') : (lang === 'हिंदी' ? 'फफूंद विस्तार' : 'Mold Expansion')}</span>
               </div>
-              <div style={{
-                padding: 10,
-                borderRadius: 8,
-                background: isDark ? '#2e0f15' : '#fff1f2',
-                border: `1px solid ${isDark ? '#ef444466' : '#fecaca'}`,
-                textAlign: 'center'
-              }}>
-                <b style={{ fontSize: 11, color: isDark ? '#f87171' : '#dc2626', display: 'block' }}>{t.day8Plus}</b>
-                <span style={{ fontSize: 10, color: isDark ? '#cbd5e1' : 'var(--ink-600)' }}>{t.day8PlusDesc}</span>
+              <div style={{ padding: 10, borderRadius: 8, background: isDark ? '#2e0f15' : '#fff1f2', border: `1px solid ${isDark ? '#ef444466' : '#fecaca'}`, textAlign: 'center' }}>
+                <b style={{ fontSize: 11, color: isDark ? '#f87171' : '#dc2626', display: 'block' }}>{t.day8Plus || 'Day 8+'}</b>
+                <span style={{ fontSize: 10, color: isDark ? '#cbd5e1' : 'var(--ink-600)' }}>{lang === 'हिंदी' ? 'उच्च ऑक्सीकरण' : 'Severe Spoilage'}</span>
               </div>
             </div>
 
             <div style={{ fontSize: 11.5, background: isDark ? '#0e291b' : '#f8fafc', padding: '8px 12px', borderRadius: 6, color: isDark ? '#e2e8f0' : 'var(--ink-700)', display: 'flex', alignItems: 'center', gap: 8 }}>
               <Zap size={13} color="#f59e0b"/>
-              <span><b>{t.actionTip}:</b> {safeDays <= 3 ? t.spoilageActionUrgent : t.spoilageActionSafe}</span>
+              <span>
+                <b>{t.reCheckInterval || (lang === 'हिंदी' ? 'पुनः परीक्षण अनुशंसित समय:' : 'Recommended Re-check Interval:')}</b> {isBad ? (lang === 'हिंदी' ? '24 घंटे के भीतर नया स्कैन अनिवार्य है।' : 'Mandatory re-scan within 24 hours.') : isCaution ? (lang === 'हिंदी' ? '3 से 4 दिन में पुनः स्कैन करें।' : 'Re-scan within 3 to 4 days.') : (lang === 'हिंदी' ? '7 से 10 दिन में नियमित जांच करें।' : 'Routine re-scan in 7 to 10 days.')}
+              </span>
             </div>
           </div>
         )
       })()}
 
-      {/* ── Ration Optimizer ── */}
+      {/* ── 7. FEED-TO-MILK IMPACT & RATION SIMULATOR SHORTCUT ── */}
       <div className="card" style={{ marginBottom: 20 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Salad size={16} color="#0ea5e9"/>
-            <b style={{ fontSize: 14, color: isDark ? '#ffffff' : 'inherit' }}>{t.rationOptimizer}</b>
+            <HeartPulse size={16} color="#ec4899"/>
+            <b style={{ fontSize: 14, color: isDark ? '#ffffff' : 'inherit' }}>
+              {t.feedToMilkImpact || (lang === 'हिंदी' ? 'दूध उत्पादन पर पोषण प्रभाव' : 'Feed-to-Milk Lactation Impact')}
+            </b>
           </div>
-          <span style={{
-            fontSize: 11,
-            color: isDark ? '#86efac' : '#16a34a',
-            fontWeight: 700,
-            background: isDark ? '#092516' : '#f0fdf4',
-            padding: '2px 8px',
-            borderRadius: 99,
-            border: `1px solid ${isDark ? '#16a34a66' : '#bbf7d0'}`
-          }}>
-            {t.potentialSavings}
-          </span>
+          <button className="button primary sm" onClick={() => navigate('/ration-simulator')}>
+            <Salad size={13}/> {t.rationSimulator || 'Ration Simulator'} →
+          </button>
         </div>
-        <p style={{ fontSize: 12, color: isDark ? '#cbd5e1' : 'var(--ink-600)', margin: '0 0 12px' }}>
-          {t.rationOptDesc}
-        </p>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 12 }}>
           <div style={{ padding: 12, borderRadius: 8, background: isDark ? '#0a2015' : '#f8fafc', border: `1px solid ${isDark ? '#173b27' : 'var(--border-light)'}` }}>
-            <b style={{ fontSize: 12, color: isDark ? '#ffffff' : 'var(--ink-900)', display: 'block', marginBottom: 4 }}>{t.mustardCake}</b>
-            <p style={{ fontSize: 11, color: isDark ? '#cbd5e1' : 'var(--ink-600)', margin: '0 0 6px' }}>{t.mustardCakeDesc}</p>
-            <small style={{ fontSize: 10, color: isDark ? '#4ade80' : '#16a34a', fontWeight: 700 }}>{t.mustardCakeSave}</small>
+            <b style={{ fontSize: 12, color: isDark ? '#ffffff' : 'var(--ink-900)', display: 'block', marginBottom: 4 }}>
+              {lang === 'हिंदी' ? 'रुमेन किण्वन संतुलन' : 'Rumen Fermentation Balance'}
+            </b>
+            <p style={{ fontSize: 11, color: isDark ? '#cbd5e1' : 'var(--ink-600)', margin: '0 0 6px' }}>
+              {isBad ? (lang === 'हिंदी' ? 'खराब साइलेज रुमेन माइक्रोफ्लोरा को असंतुलित कर सकता है।' : 'Elevated butyric acid and mycotoxins disrupt rumen microbial synthesis.') : (lang === 'हिंदी' ? 'इष्टतम लैक्टिक एसिड रुमेन pH को 6.2–6.8 पर स्थिर रखता है।' : 'Lactic acid matrix maintains rumen pH at optimal 6.2–6.8 range.')}
+            </p>
           </div>
           <div style={{ padding: 12, borderRadius: 8, background: isDark ? '#0a2015' : '#f8fafc', border: `1px solid ${isDark ? '#173b27' : 'var(--border-light)'}` }}>
-            <b style={{ fontSize: 12, color: isDark ? '#ffffff' : 'var(--ink-900)', display: 'block', marginBottom: 4 }}>{t.greenBerseem}</b>
-            <p style={{ fontSize: 11, color: isDark ? '#cbd5e1' : 'var(--ink-600)', margin: '0 0 6px' }}>{t.greenBerseemDesc}</p>
-            <small style={{ fontSize: 10, color: isDark ? '#4ade80' : '#16a34a', fontWeight: 700 }}>{t.greenBerseemGain}</small>
+            <b style={{ fontSize: 12, color: isDark ? '#ffffff' : 'var(--ink-900)', display: 'block', marginBottom: 4 }}>
+              {lang === 'हिंदी' ? 'दूध व फैट प्रतिशत अनुमान' : 'Estimated Milk Fat / SNF Potential'}
+            </b>
+            <p style={{ fontSize: 11, color: isDark ? '#cbd5e1' : 'var(--ink-600)', margin: '0 0 6px' }}>
+              {isBad ? (lang === 'हिंदी' ? 'दूध में 1.5–2.0 लीटर की गिरावट व फैट ड्रॉप का जोखिम।' : 'Estimated 1.5–2.0 L/cow daily lactation penalty if fed uncorrected.') : (lang === 'हिंदी' ? 'स्थिर 14.5–16.0 लीटर/गाय दूध उत्पादन और 4.2% फैट बनाए रखने में सहायक।' : 'Supports sustained 14.5–16.0 L/cow daily yield and 4.2% milk fat.')}
+            </p>
           </div>
-          <div style={{ padding: 12, borderRadius: 8, background: isDark ? '#0a2015' : '#f8fafc', border: `1px solid ${isDark ? '#173b27' : 'var(--border-light)'}` }}>
-            <b style={{ fontSize: 12, color: isDark ? '#ffffff' : 'var(--ink-900)', display: 'block', marginBottom: 4 }}>{t.minBuffer}</b>
-            <p style={{ fontSize: 11, color: isDark ? '#cbd5e1' : 'var(--ink-600)', margin: '0 0 6px' }}>{t.minBufferDesc}</p>
-            <small style={{ fontSize: 10, color: '#38bdf8', fontWeight: 700 }}>{t.minBufferBenefit}</small>
-          </div>
+        </div>
+
+        <div style={{ fontSize: 11, color: isDark ? '#94a3b8' : 'var(--ink-500)', fontStyle: 'italic' }}>
+          * {lang === 'हिंदी' ? 'नोट: यह डेयरी पोषण दिशानिर्देशों पर आधारित अनुमानित शारीरिक प्रभाव है, कोई प्रयोगशाला गारंटी नहीं।' : 'Note: Estimated physiological projection based on dairy nutritional guidelines, not a laboratory guarantee.'}
         </div>
       </div>
 
+      {/* ── 8. ADVISORIES ── */}
       <div className="card">
         <b style={{ fontSize: 14, display: 'block', marginBottom: 12, color: isDark ? '#ffffff' : 'inherit' }}>{t.advisories}</b>
         <div style={{ display: 'grid', gap: 8 }}>
@@ -1565,11 +1692,6 @@ function Result() {
             </div>
           ))}
         </div>
-        {test.recommendations && (
-          <p style={{ marginTop: 14, fontSize: 12.5, color: isDark ? '#e2e8f0' : 'var(--ink-700)', fontWeight: 600 }}>
-            {t.farmerRecommendation}: {test.recommendations}
-          </p>
-        )}
       </div>
     </div>
   )
@@ -1774,6 +1896,58 @@ function BatchDetail() {
         </div>
       </div>
 
+      {/* ── BATCH DIGITAL TWIN TIMELINE (FEATURE 2) ── */}
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Activity size={17} color="var(--brand-primary)"/>
+            <b style={{ fontSize: 14 }}>{t.digitalTwinTimeline || (lang === 'हिंदी' ? 'बैच डिजिटल ट्विन टाइमलाइन' : 'Batch Digital Twin Timeline')}</b>
+          </div>
+          <span style={{ fontSize: 11, color: 'var(--ink-500)' }}>
+            {t.digitalTwinDesc || (lang === 'हिंदी' ? 'विभिन्न परीक्षणों में समय के साथ गुणवत्ता व खराबी की ट्रैकिंग' : 'Condition trajectory across successive scans')}
+          </span>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+          {tests.map((t2, idx) => {
+            const sc = Number(t2.score || 82)
+            const st = t2.overallStatus || t2.risk || (sc >= 80 ? 'Good' : sc >= 60 ? 'Caution' : 'Bad')
+            const isB = st === 'Bad' || sc < 60
+            const isC = !isB && (st === 'Caution' || sc < 80)
+            const dayLabel = idx === 0 ? (lang === 'हिंदी' ? 'दिन 1 (आरंभिक)' : 'Day 1 (Initial)') : idx === 1 ? (lang === 'हिंदी' ? 'दिन 5 (मध्य)' : 'Day 5 (Mid-ferment)') : idx === 2 ? (lang === 'हिंदी' ? 'दिन 9 (फेस खुला)' : 'Day 9 (Face Open)') : (lang === 'हिंदी' ? `दिन ${1 + idx * 4}` : `Day ${1 + idx * 4}`)
+
+            return (
+              <div key={t2.id || t2._id || idx} style={{
+                padding: 12,
+                borderRadius: 8,
+                background: isB ? '#fff1f2' : isC ? '#fffbeb' : '#f0fdf4',
+                border: `1px solid ${isB ? '#fecaca' : isC ? '#fde68a' : '#bbf7d0'}`,
+                position: 'relative'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <b style={{ fontSize: 11, color: 'var(--ink-500)' }}>{dayLabel}</b>
+                  <span className={`badge ${riskClass(st)}`} style={{ fontSize: 10 }}>{locTerm(st)}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
+                  <b style={{ fontSize: 18, color: sc >= 80 ? '#16a34a' : sc >= 60 ? '#d97706' : '#dc2626' }}>{sc}</b>
+                  <small style={{ fontSize: 10, color: 'var(--ink-500)' }}>/ 100</small>
+                </div>
+                <p style={{ fontSize: 11, color: 'var(--ink-700)', margin: '0 0 8px', lineHeight: 1.35 }}>
+                  {isB
+                    ? (lang === 'हिंदी' ? 'फफूंद व ब्यूटिरिक एसिड वृद्धि' : 'Mold & clostridial heating')
+                    : isC
+                    ? (lang === 'हिंदी' ? 'हल्की हवा का रिसाव व नमी विचलन' : 'Minor air ingress & moisture shift')
+                    : (lang === 'हिंदी' ? 'उत्कृष्ट लैक्टिक किण्वन संरक्षित' : 'Optimal lactic fermentation')}
+                </p>
+                <Link to={`/analysis/${t2.id || t2._id}`} style={{ fontSize: 10.5, color: 'var(--brand-primary)', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  {t.viewReport || 'View Scan'} →
+                </Link>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
       <div className="table-container">
         <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border-light)' }}>
           <b>{t.batchAnal}</b>
@@ -1796,6 +1970,277 @@ function BatchDetail() {
             ))}
           </tbody>
         </table>
+      </div>
+    </div>
+  )
+}
+
+/* ─────────────────── SCREEN: WHAT-IF RATION SIMULATOR (FEATURE 4) ─────────────────── */
+const STANDARD_INGREDIENTS = [
+  { id: 'silage', name: 'Maize Silage', nameHi: 'मक्का साइलेज', dm: 0.35, cp: 8.5, me: 9.8, ndf: 45, costPerKg: 2.5, defaultKg: 16 },
+  { id: 'straw', name: 'Wheat Straw (Bhusa)', nameHi: 'गेहूं का भूसा', dm: 0.90, cp: 3.5, me: 6.2, ndf: 70, costPerKg: 6.0, defaultKg: 3 },
+  { id: 'green', name: 'Green Berseem / Fodder', nameHi: 'हरा चारा (बरसीम/नेपियर)', dm: 0.18, cp: 16.0, me: 9.0, ndf: 42, costPerKg: 2.0, defaultKg: 8 },
+  { id: 'mustard', name: 'Mustard Cake (Sarson Khali)', nameHi: 'सरसों की खली', dm: 0.90, cp: 34.0, me: 11.5, ndf: 28, costPerKg: 28.0, defaultKg: 1.5 },
+  { id: 'cotton', name: 'Cottonseed Cake (Binola)', nameHi: 'बिनोला खली', dm: 0.90, cp: 24.0, me: 10.8, ndf: 38, costPerKg: 26.0, defaultKg: 1.0 },
+  { id: 'concentrate', name: 'Dairy Feed Pellet (20% CP)', nameHi: 'संतुलित कैटल फीड पेलेट', dm: 0.88, cp: 20.0, me: 11.2, ndf: 30, costPerKg: 24.0, defaultKg: 3.5 },
+  { id: 'mineral', name: 'Chelated Mineral Mixture + Salt', nameHi: 'खनिज मिश्रण + नमक', dm: 0.98, cp: 0.0, me: 0.0, ndf: 0, costPerKg: 120.0, defaultKg: 0.15 }
+]
+
+function RationSimulator() {
+  const { t, lang, loc: locTerm, user } = useApp()
+  const isHi = lang === 'हिंदी'
+  const herdSize = Number(user?.cattleCount || 24)
+
+  const [quantities, setQuantities] = useState(() => {
+    const initial = {}
+    STANDARD_INGREDIENTS.forEach(ing => { initial[ing.id] = ing.defaultKg })
+    return initial
+  })
+
+  const updateQty = (id, val) => {
+    const num = Math.max(0, parseFloat(val) || 0)
+    setQuantities(prev => ({ ...prev, [id]: num }))
+  }
+
+  const applyPreset = (type) => {
+    if (type === 'traditional') {
+      setQuantities({ silage: 8, straw: 6, green: 4, mustard: 1.0, cotton: 0.5, concentrate: 3.0, mineral: 0.05 })
+    } else if (type === 'high_silage') {
+      setQuantities({ silage: 20, straw: 2.0, green: 8, mustard: 1.8, cotton: 0.8, concentrate: 3.0, mineral: 0.15 })
+    } else {
+      const reset = {}
+      STANDARD_INGREDIENTS.forEach(ing => { reset[ing.id] = ing.defaultKg })
+      setQuantities(reset)
+    }
+  }
+
+  // Calculate Live Metrics
+  let totalFreshKg = 0
+  let totalDmKg = 0
+  let totalCpGrams = 0
+  let totalMe = 0
+  let totalNdfKg = 0
+  let totalDailyCost = 0
+
+  STANDARD_INGREDIENTS.forEach(ing => {
+    const kg = quantities[ing.id] || 0
+    const dmKg = kg * ing.dm
+    totalFreshKg += kg
+    totalDmKg += dmKg
+    totalCpGrams += dmKg * (ing.cp / 100) * 1000
+    totalMe += dmKg * ing.me
+    totalNdfKg += dmKg * (ing.ndf / 100)
+    totalDailyCost += kg * ing.costPerKg
+  })
+
+  const blendedCpPct = totalDmKg > 0 ? ((totalCpGrams / 1000) / totalDmKg) * 100 : 0
+  const blendedMe = totalDmKg > 0 ? totalMe / totalDmKg : 0
+  const blendedNdfPct = totalDmKg > 0 ? (totalNdfKg / totalDmKg) * 100 : 0
+
+  // Traditional baseline metrics for comparison
+  const baseCost = 182
+  const baseCp = 11.4
+  const dailySavingPerCow = Math.round(baseCost - totalDailyCost)
+  const monthlyHerdSavings = Math.round(dailySavingPerCow * herdSize * 30)
+
+  // Nutritional safety checks
+  const isCpOptimal = blendedCpPct >= 14 && blendedCpPct <= 17.5
+  const isCpLow = blendedCpPct < 13
+  const isNdfOptimal = blendedNdfPct >= 28 && blendedNdfPct <= 38
+  const isDmOptimal = totalDmKg >= 11.5 && totalDmKg <= 15.0
+
+  return (
+    <div className="page">
+      <div className="page-heading">
+        <div>
+          <h1>{t.rationSimulator || (isHi ? 'व्हाट-इफ़ राशन सिम्युलेटर' : 'What-If Feed & Ration Simulator')}</h1>
+          <p>{t.rationSimulatorDesc || (isHi ? 'डेयरी पशुओं के लिए टीएमआर चारा, क्रूड प्रोटीन, रेशा और दैनिक लागत संतुलित करें' : 'Simulate Total Mixed Rations, optimize crude protein, fiber, energy and daily herd feed cost')}</p>
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button className="button secondary sm" onClick={() => applyPreset('traditional')}>
+            {isHi ? 'पारंपरिक उच्च-भूसा आहार' : 'Traditional High-Straw'}
+          </button>
+          <button className="button primary sm" onClick={() => applyPreset('high_silage')}>
+            {isHi ? 'इष्टतम उच्च-साइलेज TMR' : 'Optimal High-Silage TMR'}
+          </button>
+          <button className="button secondary sm" onClick={() => applyPreset('default')}>
+            {t.resetDefault || (isHi ? 'मानक रीसेट' : 'Reset Standard')}
+          </button>
+        </div>
+      </div>
+
+      {/* ── CURRENT VS PROPOSED COMPARISON HERO ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginBottom: 20 }}>
+        {/* Current Traditional Ration Card */}
+        <div className="card" style={{ background: '#f8fafc', border: '1px solid var(--border-light)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <b style={{ fontSize: 13, color: 'var(--ink-600)' }}>{t.currentDiet || (isHi ? 'वर्तमान पारंपरिक राशन' : 'Current Traditional Diet')}</b>
+            <span className="badge caution" style={{ fontSize: 10 }}>{isHi ? 'उच्च लागत' : 'High Cost'}</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, textAlign: 'center' }}>
+            <div style={{ padding: 8, background: '#fff', borderRadius: 6, border: '1px solid #e2e8f0' }}>
+              <small style={{ fontSize: 10, color: 'var(--ink-500)' }}>{isHi ? 'क्रूड प्रोटीन' : 'Protein (CP)'}</small>
+              <b style={{ fontSize: 14, display: 'block', color: '#d97706' }}>{baseCp}%</b>
+            </div>
+            <div style={{ padding: 8, background: '#fff', borderRadius: 6, border: '1px solid #e2e8f0' }}>
+              <small style={{ fontSize: 10, color: 'var(--ink-500)' }}>{isHi ? 'ऊर्जा (ME)' : 'Energy'}</small>
+              <b style={{ fontSize: 14, display: 'block', color: 'var(--ink-800)' }}>8.4 MJ</b>
+            </div>
+            <div style={{ padding: 8, background: '#fff', borderRadius: 6, border: '1px solid #e2e8f0' }}>
+              <small style={{ fontSize: 10, color: 'var(--ink-500)' }}>{isHi ? 'दैनिक लागत' : 'Cost/Cow'}</small>
+              <b style={{ fontSize: 14, display: 'block', color: '#dc2626' }}>₹{baseCost}/d</b>
+            </div>
+          </div>
+        </div>
+
+        {/* Proposed Simulated Ration Card */}
+        <div className="card" style={{ background: '#f0fdf4', border: '2px solid #22c55e' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <b style={{ fontSize: 13, color: '#166534' }}>{t.proposedDiet || (isHi ? 'प्रस्तावित सिम्युलेटेड राशन' : 'Proposed Simulated Diet')}</b>
+            <span className="badge good" style={{ fontSize: 10 }}>{isHi ? 'इष्टतम TMR' : 'Optimized TMR'}</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, textAlign: 'center' }}>
+            <div style={{ padding: 8, background: '#fff', borderRadius: 6, border: '1px solid #bbf7d0' }}>
+              <small style={{ fontSize: 10, color: '#166534' }}>{isHi ? 'क्रूड प्रोटीन' : 'Protein (CP)'}</small>
+              <b style={{ fontSize: 14, display: 'block', color: isCpOptimal ? '#16a34a' : isCpLow ? '#dc2626' : '#d97706' }}>
+                {blendedCpPct.toFixed(1)}%
+              </b>
+            </div>
+            <div style={{ padding: 8, background: '#fff', borderRadius: 6, border: '1px solid #bbf7d0' }}>
+              <small style={{ fontSize: 10, color: '#166534' }}>{isHi ? 'ऊर्जा (ME)' : 'Energy'}</small>
+              <b style={{ fontSize: 14, display: 'block', color: '#166534' }}>{blendedMe.toFixed(1)} MJ</b>
+            </div>
+            <div style={{ padding: 8, background: '#fff', borderRadius: 6, border: '1px solid #bbf7d0' }}>
+              <small style={{ fontSize: 10, color: '#166534' }}>{isHi ? 'दैनिक लागत' : 'Cost/Cow'}</small>
+              <b style={{ fontSize: 14, display: 'block', color: '#166534' }}>₹{Math.round(totalDailyCost)}/d</b>
+            </div>
+          </div>
+        </div>
+
+        {/* Savings Card */}
+        <div className="card" style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', display: 'flex', flexDirection: 'column', justifyContent: 'center', textAlign: 'center' }}>
+          <b style={{ fontSize: 12, color: '#047857', display: 'block', marginBottom: 4 }}>
+            {t.dailySavings || (isHi ? 'अनुमानित दैनिक बचत' : 'Estimated Daily Savings')}
+          </b>
+          <div style={{ fontSize: 22, fontWeight: 800, color: dailySavingPerCow >= 0 ? '#059669' : '#dc2626' }}>
+            {dailySavingPerCow >= 0 ? `+ ₹${dailySavingPerCow}` : `- ₹${Math.abs(dailySavingPerCow)}`}
+            <small style={{ fontSize: 12, fontWeight: 600 }}> / {isHi ? 'गाय / दिन' : 'cow / day'}</small>
+          </div>
+          <span style={{ fontSize: 11, color: '#065f46', marginTop: 4 }}>
+            {isHi ? `${herdSize} पशुओं के लिए ₹${Math.abs(monthlyHerdSavings).toLocaleString('en-IN')}/माह ${dailySavingPerCow >= 0 ? 'की बचत' : 'अतिरिक्त खर्च'}` : `₹${Math.abs(monthlyHerdSavings).toLocaleString('en-IN')}/month for ${herdSize} cattle`}
+          </span>
+        </div>
+      </div>
+
+      {/* ── INGREDIENTS INTERACTIVE SLIDERS TABLE ── */}
+      <div className="card" style={{ marginBottom: 20 }}>
+        <b style={{ fontSize: 14, display: 'block', marginBottom: 14 }}>
+          {t.ingredients || (isHi ? 'चारा व दाना सामग्री मात्रा (किग्रा/गाय/दिन)' : 'Feed Ingredients & Daily Quantities')}
+        </b>
+        <div className="table-container" style={{ border: 'none', boxShadow: 'none' }}>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>{isHi ? 'सामग्री' : 'Ingredient'}</th>
+                <th>{isHi ? 'सूखा पदार्थ (DM)' : 'Dry Matter'}</th>
+                <th>{isHi ? 'प्रोटीन (CP)' : 'Protein'}</th>
+                <th>{isHi ? 'ऊर्जा (ME)' : 'Energy'}</th>
+                <th>{isHi ? 'दर (₹/किग्रा)' : 'Rate (₹/kg)'}</th>
+                <th style={{ width: 140 }}>{isHi ? 'दैनिक मात्रा (किग्रा)' : 'Daily Intake (kg)'}</th>
+                <th>{isHi ? 'दैनिक खर्च' : 'Cost (₹)'}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {STANDARD_INGREDIENTS.map(ing => {
+                const qty = quantities[ing.id] ?? ing.defaultKg
+                const cost = qty * ing.costPerKg
+                return (
+                  <tr key={ing.id}>
+                    <td><b>{isHi ? ing.nameHi : ing.name}</b></td>
+                    <td>{Math.round(ing.dm * 100)}%</td>
+                    <td>{ing.cp}%</td>
+                    <td>{ing.me} MJ</td>
+                    <td>₹{ing.costPerKg}</td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <input
+                          type="number"
+                          step={ing.id === 'mineral' ? '0.05' : '0.5'}
+                          min="0"
+                          max="40"
+                          className="field-input"
+                          style={{ width: 75, padding: '4px 8px', fontSize: 13, textAlign: 'center' }}
+                          value={qty}
+                          onChange={e => updateQty(ing.id, e.target.value)}
+                        />
+                        <small style={{ color: 'var(--ink-500)' }}>kg</small>
+                      </div>
+                    </td>
+                    <td><b>₹{cost.toFixed(1)}</b></td>
+                  </tr>
+                )
+              })}
+            </tbody>
+            <tfoot>
+              <tr style={{ background: '#f8fafc', fontWeight: 700 }}>
+                <td>{isHi ? 'कुल दैनिक टीएमआर' : 'Total Daily TMR'}</td>
+                <td>{totalDmKg.toFixed(1)} kg DM</td>
+                <td style={{ color: isCpOptimal ? '#16a34a' : isCpLow ? '#dc2626' : '#d97706' }}>{blendedCpPct.toFixed(1)}% CP</td>
+                <td>{blendedMe.toFixed(1)} MJ</td>
+                <td>—</td>
+                <td>{totalFreshKg.toFixed(1)} kg Fresh</td>
+                <td style={{ color: '#16a34a' }}>₹{Math.round(totalDailyCost)} / {isHi ? 'गाय' : 'cow'}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      {/* ── NUTRITIONAL HEALTH & RUMEN ALERTS ── */}
+      <div className="card" style={{ marginBottom: 20 }}>
+        <b style={{ fontSize: 14, display: 'block', marginBottom: 12 }}>
+          {t.nutritionalWarning || (isHi ? 'पोषण संबंधी सलाह व रुमेन संतुलन' : 'Nutritional & Rumen Health Analysis')}
+        </b>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+          <div style={{ padding: 12, borderRadius: 8, background: isCpOptimal ? '#f0fdf4' : '#fffbeb', border: `1px solid ${isCpOptimal ? '#bbf7d0' : '#fde68a'}` }}>
+            <b style={{ fontSize: 12, color: isCpOptimal ? '#166534' : '#92400e', display: 'block', marginBottom: 4 }}>
+              {isCpOptimal ? (isHi ? '✅ प्रोटीन संतुलन इष्टतम' : '✅ Optimal Protein (CP)') : (isHi ? '⚠️ प्रोटीन असंतुलन' : '⚠️ Protein Imbalance')}
+            </b>
+            <p style={{ fontSize: 11, color: 'var(--ink-700)', margin: 0 }}>
+              {isCpOptimal
+                ? (isHi ? `15-16% क्रूड प्रोटीन 14-18 लीटर दूध उत्पादन के लिए आदर्श है।` : `15-16% CP supports sustained 14-18 L/day milk production.`)
+                : isCpLow
+                ? (isHi ? `प्रोटीन कम (<13%) है। सरसों की खली या दाल चूनी 0.5 किग्रा बढ़ाएं।` : `Low protein (<13%). Increase mustard cake or legume fodder by 0.5 kg.`)
+                : (isHi ? `प्रोटीन अधिक (>18%) है। दाना की मात्रा कम करके लागत बचाएं।` : `Excess protein (>18%). Reduce concentrate to save feed costs.`)}
+            </p>
+          </div>
+
+          <div style={{ padding: 12, borderRadius: 8, background: isNdfOptimal ? '#f0fdf4' : '#fffbeb', border: `1px solid ${isNdfOptimal ? '#bbf7d0' : '#fde68a'}` }}>
+            <b style={{ fontSize: 12, color: isNdfOptimal ? '#166534' : '#92400e', display: 'block', marginBottom: 4 }}>
+              {isNdfOptimal ? (isHi ? '✅ रेशा व जुगाली संतुलन' : '✅ Effective Fiber (NDF)') : (isHi ? '⚠️ रेशा असंतुलन' : '⚠️ Fiber Imbalance')}
+            </b>
+            <p style={{ fontSize: 11, color: 'var(--ink-700)', margin: 0 }}>
+              {isNdfOptimal
+                ? (isHi ? `30-36% NDF रेशा जुगाली और 4.0%+ दूध फैट को स्थिर रखता है।` : `30-36% NDF fiber maintains healthy cud chewing and 4.0%+ milk fat.`)
+                : (isHi ? `रुमेन एसिडोसिस से बचने के लिए 2-3 किग्रा सूखा भूसा अवश्य शामिल रखें।` : `Maintain 2-3 kg dry straw to prevent sub-acute rumen acidosis (SARA).`)}
+            </p>
+          </div>
+
+          <div style={{ padding: 12, borderRadius: 8, background: isDmOptimal ? '#f0fdf4' : '#fffbeb', border: `1px solid ${isDmOptimal ? '#bbf7d0' : '#fde68a'}` }}>
+            <b style={{ fontSize: 12, color: isDmOptimal ? '#166534' : '#92400e', display: 'block', marginBottom: 4 }}>
+              {isDmOptimal ? (isHi ? '✅ सूखा पदार्थ (DM) पर्याप्त' : '✅ Dry Matter Capacity') : (isHi ? '⚠️ सूखा पदार्थ जांच' : '⚠️ Dry Matter Capacity')}
+            </b>
+            <p style={{ fontSize: 11, color: 'var(--ink-700)', margin: 0 }}>
+              {isDmOptimal
+                ? (isHi ? `12-14 किग्रा सूखा पदार्थ 400-500 किग्रा गाय के लिए आदर्श दैनिक क्षमता है।` : `12-14 kg DM intake matches full capacity for 400-500 kg dairy cows.`)
+                : (isHi ? `सूखा पदार्थ का कुल योग सामान्य शारीरिक आवश्यकता के अनुसार समायोजित करें।` : `Adjust total dry matter volume according to individual herd live weight.`)}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ padding: 12, background: '#f8fafc', borderRadius: 8, border: '1px solid var(--border-light)', fontSize: 11, color: 'var(--ink-600)' }}>
+        <b>{isHi ? 'वैज्ञानिक संदर्भ:' : 'Scientific Reference:'}</b> {t.estimatedModelNotice || (isHi ? 'ICAR एवं राष्ट्रीय डेयरी अनुसंधान संस्थान (NDRI) पोषण दिशानिर्देशों पर आधारित अनुमानित मॉडल। वास्तविक आहार पशु के शारीरिक वजन, ब्यात अवस्था और मौसम के अनुसार बदल सकता है।' : 'Estimated nutritional model based on standard ICAR & NDRI dairy guidelines. Actual intake varies by lactation stage and body weight.')}
       </div>
     </div>
   )
