@@ -2,6 +2,7 @@ import mongoose from 'mongoose'
 import SilageCoachStep from '../models/SilageCoachStep.js'
 import { isDbConnected } from '../config/db.js'
 import { memoryStore } from '../utils/memoryStore.js'
+import { invalidateSuggestionsCache } from '../services/personalizationService.js'
 
 const DEFAULT_STAGES = [
   {
@@ -205,6 +206,7 @@ export async function updateCoachStep(req, res, next) {
         },
         { new: true, upsert: true }
       )
+      invalidateSuggestionsCache(farmerId)
       return res.json(step)
     } else {
       let step = memoryStore.silageCoachSteps.find(s => s.batchId === batchId && s.stageNumber === stageNumber)
@@ -227,6 +229,7 @@ export async function updateCoachStep(req, res, next) {
         }
         memoryStore.silageCoachSteps.push(step)
       }
+      invalidateSuggestionsCache(farmerId)
       return res.json(step)
     }
   } catch (err) {

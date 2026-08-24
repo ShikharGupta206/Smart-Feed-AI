@@ -24,7 +24,7 @@ const riskClass = risk => {
 const AppCtx = createContext({})
 function useApp() { return useContext(AppCtx) }
 
-const API_BASE = 'http://localhost:8000'
+const API_BASE = import.meta.env?.VITE_API_URL ?? (typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'http://localhost:8000' : '')
 
 function App() {
   const [lang, setLang] = useState('English')
@@ -68,7 +68,11 @@ function App() {
     const res = await fetch(`${API_BASE}${path}`, { ...options, headers })
     if (!res.ok) {
       const data = await res.json().catch(() => ({}))
-      throw new Error(data.error || `HTTP error! Status: ${res.status}`)
+      const err = new Error(data.message || data.error || `HTTP error! Status: ${res.status}`)
+      err.code = data.error || null
+      err.suggestion = data.suggestion || null
+      err.status = res.status
+      throw err
     }
     return res.json()
   }, [token])
@@ -762,13 +766,14 @@ function NewAnalysis() {
   const [preview, setPreview] = useState(null)
   const [loading, setLoading] = useState(false)
   const [invalidAlert, setInvalidAlert] = useState(null)
+  const [analysisFailed, setAnalysisFailed] = useState(null) // { message, suggestion }
   const [sampleType, setSampleType] = useState('Silage')
   const [feedType, setFeedType] = useState('Maize Silage')
   const [storageDuration, setStorageDuration] = useState('20')
   const [storageCondition, setStorageCondition] = useState('Covered Pit')
   const [tempC, setTempC] = useState('32')
   const [humidityPct, setHumidityPct] = useState('65')
-  const [smell, setSmell] = useState('Sweet Lactic')
+  const [smell, setSmell] = useState('Neutral')
   const [batchId, setBatchId] = useState('SILAGE-001')
   const [notes, setNotes] = useState('')
   const fileInputRef = useRef(null)
@@ -786,6 +791,7 @@ function NewAnalysis() {
 
     setLoading(true)
     setInvalidAlert(null)
+    setAnalysisFailed(null)
     try {
       const base64 = await getBase64(file)
       const data = await apiFetch('/api/tests', {
@@ -813,9 +819,23 @@ function NewAnalysis() {
         throw new Error(data?.message || 'Invalid response from server')
       }
     } catch (err) {
-      const errorMsg = err.message || (lang === 'हिंदी' ? 'अपलोड की गई छवि पशु आहार या साइलेज नहीं है।' : 'The uploaded image does not appear to be cattle feed, fodder, or silage.')
-      setInvalidAlert(errorMsg)
-      toast(errorMsg, 'error')
+      // ANALYSIS_FAILED (422): image is feed but AI can't analyze it (blurry, dark, too small)
+      if (err.code === 'ANALYSIS_FAILED' || err.status === 422) {
+        setAnalysisFailed({
+          message: err.message || (lang === 'हिंदी'
+            ? 'छवि विश्लेषण विफल। कृपया एक स्पष्ट, नज़दीकी फ़ोटो अपलोड करें।'
+            : 'AI could not reliably analyze this image. Please upload a clearer photo.'),
+          suggestion: err.suggestion || (lang === 'हिंदी'
+            ? 'फ़ीड की सतह की स्पष्ट और नज़दीकी फ़ोटो लें।'
+            : 'Take a close-up, well-lit photo of the feed surface in daylight.')
+        })
+        toast(lang === 'हिंदी' ? 'छवि विश्लेषण विफल' : 'Image analysis failed', 'error')
+      } else {
+        // INVALID_FEED_IMAGE (400) or other errors
+        const errorMsg = err.message || (lang === 'हिंदी' ? 'अपलोड की गई छवि पशु आहार या साइलेज नहीं है।' : 'The uploaded image does not appear to be cattle feed, fodder, or silage.')
+        setInvalidAlert(errorMsg)
+        toast(errorMsg, 'error')
+      }
     } finally {
       setLoading(false)
     }
@@ -973,31 +993,81 @@ function NewAnalysis() {
               💡 <b>{lang === 'हिंदी' ? 'स्वीकार्य नमूने:' : 'Allowed Samples:'}</b> {lang === 'हिंदी' ? 'मक्का साइलेज, सूखा भूसा, हरा बरसीम/ज्वार, दाना पेलेट्स, या चारा गड्ढा।' : 'Maize silage, chopped straw, green berseem, cattle pellets, or silage pit face.'}
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button
-                type="button"
-                className="button secondary"
-                style={{ flex: 1 }}
-                onClick={() => setInvalidAlert(null)}
-              >
+              <button type="button" className="button secondary" style={{ flex: 1 }} onClick={() => setInvalidAlert(null)}>
                 {lang === 'हिंदी' ? 'बंद करें' : 'Dismiss'}
               </button>
-              <button
-                type="button"
-                className="button primary"
-                style={{ flex: 1 }}
-                onClick={() => {
-                  setInvalidAlert(null)
-                  setFile(null)
-                  setPreview(null)
-                  fileInputRef.current?.click()
-                }}
-              >
+              <button type="button" className="button primary" style={{ flex: 1 }} onClick={() => { setInvalidAlert(null); setFile(null); setPreview(null); fileInputRef.current?.click() }}>
                 <Upload size={14}/> {t.changePhoto}
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {analysisFailed && (
+        <div className="modal-backdrop" onClick={() => setAnalysisFailed(null)}>
+          <div
+            className="modal-box"
+            style={{
+              maxWidth: 500,
+              textAlign: 'center',
+              padding: '28px 24px',
+              background: isDark ? '#0d1a2e' : '#ffffff',
+              border: isDark ? '1px solid #1e3a5f' : '1px solid var(--border-light)'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{
+              width: 56, height: 56, borderRadius: '50%',
+              background: isDark ? '#1a2a0a' : '#fefce8',
+              border: '2px solid #ca8a04',
+              display: 'grid', placeItems: 'center', margin: '0 auto 16px'
+            }}>
+              <Camera size={28} color="#ca8a04"/>
+            </div>
+            <h3 style={{ fontSize: 18, marginBottom: 8, color: isDark ? '#fde68a' : '#92400e' }}>
+              {lang === 'हिंदी' ? 'छवि विश्लेषण विफल' : 'Image Analysis Failed'}
+            </h3>
+            <p style={{ fontSize: 13, color: isDark ? '#e2e8f0' : 'var(--ink-600)', lineHeight: 1.6, marginBottom: 16 }}>
+              {analysisFailed.message}
+            </p>
+            <div style={{
+              background: isDark ? '#0f1e12' : '#f0fdf4',
+              border: `1px solid ${isDark ? '#16a34a55' : '#bbf7d0'}`,
+              borderRadius: 8, padding: '12px 14px', fontSize: 12,
+              color: isDark ? '#86efac' : '#166534', marginBottom: 20, textAlign: 'left'
+            }}>
+              <b>📸 {lang === 'हिंदी' ? 'बेहतर फ़ोटो के लिए टिप्स:' : 'Tips for a better photo:'}</b>
+              <ul style={{ margin: '8px 0 0', paddingLeft: 16, lineHeight: 1.8 }}>
+                {lang === 'हिंदी' ? (
+                  <>
+                    <li>दिन की रोशनी या अच्छी रोशनी में फ़ोटो लें</li>
+                    <li>फ़ीड की सतह से 20-40 सेमी की दूरी से फ़ोटो लें</li>
+                    <li>कैमरा स्थिर रखें, धुंधला न हो</li>
+                    <li>फ़ीड/साइलेज फ्रेम का कम से कम 70% हिस्सा दिखे</li>
+                  </>
+                ) : (
+                  <>
+                    <li>Take the photo in daylight or bright indoor lighting</li>
+                    <li>Hold the camera 20-40 cm from the feed surface</li>
+                    <li>Keep the camera steady to avoid blur</li>
+                    <li>The feed should fill at least 70% of the frame</li>
+                  </>
+                )}
+              </ul>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button type="button" className="button secondary" style={{ flex: 1 }} onClick={() => setAnalysisFailed(null)}>
+                {lang === 'हिंदी' ? 'बंद करें' : 'Dismiss'}
+              </button>
+              <button type="button" className="button primary" style={{ flex: 1 }} onClick={() => { setAnalysisFailed(null); setFile(null); setPreview(null); fileInputRef.current?.click() }}>
+                <Camera size={14}/> {lang === 'हिंदी' ? 'नई फ़ोटो लें' : 'Retake Photo'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }

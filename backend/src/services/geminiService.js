@@ -9,13 +9,13 @@ function getGenAIClient() {
   return genAI
 }
 
-// Valid Gemini API model identifiers — ordered by capability/availability preference
+// Valid Gemini API model identifiers — ordered by availability preference (most stable first)
 const SUPPORTED_MODELS = [
   'gemini-3.5-flash',
   'gemini-3.5-flash-lite',
-  'gemini-flash-latest',
   'gemini-3.7-flash',
-  'gemini-3.6-flash'
+  'gemini-3.6-flash',
+  'gemini-flash-latest'
 ]
 
 function parseBase64Image(dataUrl) {
@@ -38,7 +38,7 @@ function parseBase64Image(dataUrl) {
   }
 }
 
-function withTimeout(promise, ms = 15000) {
+function withTimeout(promise, ms = 25000) {
   return Promise.race([
     promise,
     new Promise((_, reject) => setTimeout(() => reject(new Error(`AI Request timed out after ${ms}ms`)), ms))
@@ -55,76 +55,130 @@ export async function analyzeFeedImage(base64Image, metadata = {}) {
     storageDuration = 20,
     storageCondition = 'Covered Pit',
     notes = '',
+    smell = 'Neutral',
     herdSize = 12,
     milkPrice = 40
   } = metadata
 
+  // ── Debug: generate a unique request ID for tracing this analysis ──
+  const requestId = `VIS-${Date.now().toString(36).toUpperCase()}`
   const imagePart = parseBase64Image(base64Image)
+  const imageSizeKB = base64Image ? Math.round(base64Image.length * 0.75 / 1024) : 0
+  const mimeType = imagePart?.inlineData?.mimeType || 'unknown'
+
+  console.log(`[Gemini Vision][${requestId}] Analysis started — sampleType=${sampleType}, feedType=${feedType}, storageCondition=${storageCondition}, storageDuration=${storageDuration}d, smell=${smell}, imageSize=${imageSizeKB}KB, mimeType=${mimeType}`)
+
   const client = getGenAIClient()
 
   if (!imagePart || !imagePart.inlineData.data) {
-    console.warn('[Gemini Vision] No valid image data provided. Falling back to heuristic-engine.')
+    console.warn(`[Gemini Vision][${requestId}] No valid image data provided. Routing to input-driven heuristic.`)
     return getFallbackAnalysis(metadata)
   }
 
   if (!client) {
-    console.error('[Gemini Vision] GEMINI_API_KEY is not configured or client failed to initialize. Falling back to heuristic-engine.')
-    return getFallbackAnalysis(metadata)
+    console.error(`[Gemini Vision][${requestId}] GEMINI_API_KEY not configured. Returning analysis failed.`)
+    return {
+      isValidFeedImage: true,
+      analysis_failed: true,
+      failure_reason: 'Gemini API key is not configured on the server.',
+      failure_reason_hi: 'सर्वर पर Gemini API कुंजी कॉन्फ़िगर नहीं है।'
+    }
   }
 
-  const prompt = `You are a dairy cattle nutritionist, forage agronomist, and feed quality diagnostic AI for Indian dairy farms.
-Analyze this sample image and provided metadata:
-- Sample Type: ${sampleType} (Feed or Silage)
-- Feed Category: ${feedType}
+  const prompt = `You are a certified veterinary agronomist, dairy cattle nutritionist, and precision feed diagnostic AI.
+Your critical job is to visually inspect this agricultural feed/silage sample photo for SPOILAGE, MOLD, MYCOTOXINS, and QUALITY DEFECTS.
+
+Farmer-provided context:
+- Sample Type: ${sampleType}
+- Declared Feed Type: ${feedType}
 - Storage Duration: ${storageDuration} days
 - Storage Condition: ${storageCondition}
-- Farmer Notes: ${notes || 'None'}
+- Farmer Reported Smell: ${smell || 'Neutral'}
 
-CRITICAL VALIDATION STEP:
-First, inspect the uploaded photo carefully.
-Determine whether the image depicts cattle feed, silage, green fodder, dry fodder, straw, hay, cattle pellets, grain mash, or agricultural forage ingredients used in dairy/cattle farming.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CRITICAL RULE 0: VISUAL EVIDENCE 100% OVERRIDES METADATA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+The farmer may have entered incorrect or default dropdown values.
+YOUR ASSESSMENT MUST BE 100% BASED ON WHAT IS VISIBLE IN THIS PHOTO.
 
-If the image is completely unrelated to cattle feed/silage (for example: human face, selfie, person, car, vehicle, electronics, phone, computer, household furniture, pet dog/cat, human food dishes, clothes, landscape without cattle feed, or documents/receipts), you MUST REJECT it by returning ONLY this JSON:
-{
-  "isValidFeedImage": false,
-  "rejectionReason": "The uploaded photo does not appear to be cattle feed, fodder, or silage. Please upload a clear photo of your cattle feed sample, silage pit face, or forage.",
-  "rejectionReasonHi": "अपलोड की गई फ़ोटो पशु आहार, हरा चारा या साइलेज नहीं लग रही है। कृपया अपने पशु आहार, साइलेज या चारे के नमूने की स्पष्ट फ़ोटो अपलोड करें।"
-}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 1: REJECT NON-FEED IMAGES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+If this image depicts people, faces, vehicles, electronics, furniture, pets, blank screens, or non-agricultural items:
+Return ONLY:
+{ "isValidFeedImage": false, "rejectionReason": "Not a feed/silage image.", "rejectionReasonHi": "यह तस्वीर पशु आहार या साइलेज नहीं है।" }
 
-If the image IS a valid cattle feed, silage, or forage sample, return ONLY this valid JSON:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 2: CHECK IMAGE CLARITY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+If the image is completely pitch black, totally blurred beyond recognition, or does not show the feed surface:
+Return ONLY:
+{ "isValidFeedImage": true, "insufficient_evidence": true, "reason": "Image is too dark or blurry to examine mold or forage particles." }
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 3: RIGOROUS VISUAL MOLD & SPOILAGE DETECTION (ZERO TOLERANCE)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Inspect the forage matrix closely for:
+1. WHITE, GREY, OR LIGHT-COLORED FUNGAL MYCELIUM / MOLD PATCHES (cottony, powdery, or web-like clusters of Penicillium, Aspergillus, or Mucor).
+2. BLUE-GREEN, OLIVE-BLACK, OR RED/PINKISH MOLD SPOTS.
+3. BLACK, SLIMY, OR DARK ROTTING DISCOLORATION (clostridial decomposition, aerobic deterioration).
+4. DRY, CARAMELIZED, TOBACCO-BROWN HEAT-DAMAGED FIBERS.
+
+MOLD CLASSIFICATION MANDATE:
+- If ANY visible white mold mycelium, fungal growth, or rotting patches are present:
+  * The sample CANNOT be 'GOOD'.
+  * You MUST classify as 'POOR' (score 25–48) or 'SEVERELY_SPOILED' (score 0–24).
+  * visual_evidence MUST explicitly state: "Visible white/grey fungal mycelium mold patches observed across forage fibers."
+  * adulteration_flag / contamination: "Detected" or "Suspected".
+  * aflatoxin_level: estimated >= 25 ppb.
+  * overallStatus: "Bad".
+
+- Classification Tiers:
+  * GOOD (80–95): Clean golden-green or uniform olive color, crisp chopped stems, ZERO visible mold, zero slimy dark rot.
+  * MODERATE (55–79): Mild uneven browning, slight moisture variance, NO active mold colonies.
+  * POOR (25–54): Obvious white/grey/black mold patches, distinct discoloration, visible decay.
+  * SEVERELY_SPOILED (0–24): Widespread fungal mycelium, extensive rot, blackened spoiled silage.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 4: OUTPUT FORMAT (STRICT JSON ONLY)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Return ONLY valid JSON matching this structure:
 {
   "isValidFeedImage": true,
-  "score": 87,
-  "confidence": 92,
-  "confidenceInterval": { "min": 88, "max": 96 },
-  "overallStatus": "Good",
-  "aiExplanation": "Detailed visual evaluation specific to the color, texture, fermentation indicators, and physical traits seen in this sample photo.",
+  "insufficient_evidence": false,
+  "visual_class": "GOOD|MODERATE|POOR|SEVERELY_SPOILED",
+  "visual_evidence": [
+    "<Precise observation 1, e.g., 'White fungal mycelium patches detected across the center-left area'>",
+    "<Precise observation 2, e.g., 'Dark decayed organic matter with signs of aerobic spoilage'>",
+    "<Precise observation 3, e.g., 'Chop particle distribution and moisture visual characteristics'>"
+  ],
+  "score": <integer strictly matching your visual_class range (e.g. if mold is visible, score must be 15-45)>,
+  "confidence": <integer 75-98>,
+  "confidenceInterval": { "min": <integer>, "max": <integer> },
+  "overallStatus": "Good|Warning|Bad",
+  "aiExplanation": "<2-4 sentences explicitly stating the visual classification, exact locations of any mold or defects observed in this specific photo, and the resulting health risks for dairy cattle.>",
   "keyIndicators": [
-    "Uniform olive-green color indicates proper lactic fermentation",
-    "Tight particle distribution with low aerobic face decay",
-    "Moisture range appears optimal (60-65%)",
-    "No visible white, black, or blue-green mold spores"
+    "<Indicator 1, e.g., 'Active Fungal Mycelium / Mold: Present'>",
+    "<Indicator 2, e.g., 'Forage Discoloration: High / Aerobic Decay'>",
+    "<Indicator 3, e.g., 'Feed Safety Level: Hazardous / High Risk'>"
   ],
   "heatmapRegions": [
-    { "x": 42, "y": 38, "radius": 24, "impact": "low", "label": "Optimum Fermented Core" },
-    { "x": 75, "y": 25, "radius": 18, "impact": "medium", "label": "Surface Aerobic Exposure Zone" }
+    { "x": <0-100>, "y": <0-100>, "radius": <10-35>, "impact": "low|medium|high", "label": "<Specific defect or feature in this region>" }
   ],
   "advisories": [
-    "Maintain daily pit face feeding depth (15-20 cm) to prevent aerobic spoilage.",
-    "Ensure Total Mixed Ration balances energy with adequate effective fiber."
+    "<Actionable advice, e.g., 'Do not feed moldy portions to lactating or pregnant cattle to prevent mycotoxicosis.'>"
   ],
-  "recommendations": "Optimal for high-lactation dairy cattle. Continue current hermetic storage.",
+  "recommendations": "<Clear instruction: Discard spoiled sections, isolate batch, or feed with toxin binder.>",
   "parameters": {
-    "crude_protein": { "value": 14.2, "unit": "%", "label": "Crude Protein", "status": "Good", "optimalRange": "12% - 18%" },
-    "moisture": { "value": 61.5, "unit": "%", "label": "Moisture", "status": "Good", "optimalRange": "55% - 68%" },
-    "fiber": { "value": 28.0, "unit": "%", "label": "Fiber", "status": "Good", "optimalRange": "24% - 32%" },
-    "energy_value": { "value": 8.5, "unit": "MJ/kg", "label": "Energy Value", "status": "Good", "optimalRange": "8.0 - 10.5 MJ/kg" },
-    "mineral_status": { "value": "Balanced", "unit": "", "label": "Mineral Status", "status": "Good", "optimalRange": "Balanced" },
-    "adulteration_flag": { "value": "Not detected", "unit": "", "label": "Adulteration", "status": "Good", "optimalRange": "Not detected" },
-    "aflatoxin_level": { "value": 3.8, "unit": "ppb", "label": "Aflatoxin Level", "status": "Good", "optimalRange": "< 10 ppb" }
+    "crude_protein": { "value": <number>, "unit": "%", "label": "Crude Protein", "status": "Good|Warning|Bad", "optimalRange": "12% - 18%" },
+    "moisture": { "value": <number>, "unit": "%", "label": "Moisture", "status": "Good|Warning|Bad", "optimalRange": "55% - 68%" },
+    "fiber": { "value": <number>, "unit": "%", "label": "Fiber", "status": "Good|Warning|Bad", "optimalRange": "24% - 32%" },
+    "energy_value": { "value": <number>, "unit": "MJ/kg", "label": "Energy Value", "status": "Good|Warning|Bad", "optimalRange": "8.0 - 10.5 MJ/kg" },
+    "mineral_status": { "value": "Balanced|Marginal|Deficient", "unit": "", "label": "Mineral Status", "status": "Good|Warning|Bad", "optimalRange": "Balanced" },
+    "adulteration_flag": { "value": "Not detected|Suspected|Detected", "unit": "", "label": "Contamination / Mold", "status": "Good|Warning|Bad", "optimalRange": "Not detected" },
+    "aflatoxin_level": { "value": <number (e.g. 35 if mold is visible, 4 if clean)>, "unit": "ppb", "label": "Mycotoxin / Aflatoxin Risk", "status": "Good|Warning|Bad", "optimalRange": "< 10 ppb" }
   }
-}
-Note: "confidence" is the point estimate (0-100), and "confidenceInterval" must strictly contain the confidence point estimate: min <= confidence <= max.`
+}`
 
   const errors = []
 
@@ -142,7 +196,7 @@ Note: "confidence" is the point estimate (0-100), and "confidenceInterval" must 
 
   for (const modelName of SUPPORTED_MODELS) {
     try {
-      console.log(`[Gemini Vision] Running visual screening with ${modelName}...`)
+      console.log(`[Gemini Vision][${requestId}] Calling model ${modelName} with ${imageSizeKB}KB image...`)
       const model = client.getGenerativeModel({ model: modelName })
       const response = await withTimeout(
         model.generateContent({
@@ -157,134 +211,225 @@ Note: "confidence" is the point estimate (0-100), and "confidenceInterval" must 
             temperature: 0.2
           }
         }),
-        14000
+        25000
       )
 
       const rawText = response.response.text()
+      console.log(`[Gemini Vision][${requestId}] Raw response received from ${modelName} (${rawText.length} chars)`)
       const parsed = JSON.parse(rawText)
 
-      // Handle Rejection if unrelated image
+      // ── Handle: not a feed/silage image ──
       if (parsed && parsed.isValidFeedImage === false) {
-        console.warn(`[Gemini Vision] Image rejected — not cattle feed/silage: ${parsed.rejectionReason}`)
+        console.warn(`[Gemini Vision][${requestId}] Image rejected — not feed/silage`)
         return {
           isValidFeedImage: false,
-          rejectionReason: parsed.rejectionReason || 'The uploaded photo does not appear to be cattle feed, fodder, or silage. Please upload a clear photo of your cattle feed sample, silage pit face, or forage.',
-          rejectionReasonHi: parsed.rejectionReasonHi || 'अपलोड की गई फ़ोटो पशु आहार, हरा चारा या साइलेज नहीं लग रही है। कृपया अपने पशु आहार, साइलेज या चारे के नमूने की स्पष्ट फ़ोटो अपलोड करें।'
+          rejectionReason: parsed.rejectionReason || 'The uploaded photo does not appear to be cattle feed, fodder, or silage.',
+          rejectionReasonHi: parsed.rejectionReasonHi || 'अपलोड की गई फ़ोटो पशु आहार, हरा चारा या साइलेज नहीं लग रही है।'
         }
       }
 
+      // ── Handle: feed image but insufficient visual evidence ──
+      if (parsed && parsed.isValidFeedImage === true && parsed.insufficient_evidence === true) {
+        console.warn(`[Gemini Vision][${requestId}] Insufficient visual evidence: ${parsed.reason}`)
+        return {
+          isValidFeedImage: true,
+          analysis_failed: true,
+          failure_reason: parsed.reason || 'Image does not contain enough visual detail to perform reliable feed quality screening. Please upload a clear, close-up, well-lit photo of the feed surface.',
+          failure_reason_hi: 'छवि में पर्याप्त दृश्य जानकारी नहीं है। कृपया फ़ीड की सतह की स्पष्ट, नज़दीकी और अच्छी रोशनी में फ़ोटो अपलोड करें।'
+        }
+      }
+
+      // ── Handle: valid analysis with visual_class + score ──
       if (parsed && typeof parsed.score === 'number' && parsed.parameters) {
         parsed.isValidFeedImage = true
         parsed.aiModelUsed = modelName
-        parsed.overallStatus = normalizeStatus(parsed.overallStatus || (parsed.score < 55 ? 'Bad' : parsed.score < 78 ? 'Warning' : 'Good'))
 
-        // Normalize every individual parameter's status
+        // Enforce strict score consistency with visual_class
+        const vc = String(parsed.visual_class || '').toUpperCase()
+        if (vc.includes('SEVERELY') || vc.includes('SPOILED')) {
+          parsed.score = Math.max(5, Math.min(24, parsed.score))
+          parsed.overallStatus = 'Bad'
+        } else if (vc.includes('POOR')) {
+          parsed.score = Math.max(25, Math.min(54, parsed.score))
+          parsed.overallStatus = 'Bad'
+        } else if (vc.includes('MODERATE')) {
+          parsed.score = Math.max(55, Math.min(79, parsed.score))
+          parsed.overallStatus = 'Warning'
+        } else if (vc.includes('GOOD')) {
+          parsed.score = Math.max(80, Math.min(96, parsed.score))
+          parsed.overallStatus = 'Good'
+        } else {
+          parsed.overallStatus = parsed.score >= 80 ? 'Good' : parsed.score >= 55 ? 'Warning' : 'Bad'
+        }
+
+        // Normalize parameter statuses
         if (parsed.parameters && typeof parsed.parameters === 'object') {
           for (const key of Object.keys(parsed.parameters)) {
             const param = parsed.parameters[key]
             if (param && typeof param === 'object') {
               param.status = normalizeStatus(param.status)
-              if (!param.label) {
-                param.label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-              }
+              if (!param.label) param.label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
             }
           }
         }
 
         parsed.mycotoxinRiskRadar = calculateMycotoxinRiskRadar(parsed.parameters, metadata)
         parsed.costOfPoorQuality = calculateCostOfPoorQuality(parsed.score, herdSize, milkPrice)
-        parsed.disclaimer = 'Screening estimate for management decision support. Not a regulatory laboratory assay.'
-        
-        // Guarantee confidence point estimate strictly falls within [min, max]
-        const conf = typeof parsed.confidence === 'number' ? parsed.confidence : 91
-        let min = parsed.confidenceInterval?.min
-        let max = parsed.confidenceInterval?.max
+        parsed.disclaimer = 'Visual screening estimate only. Cannot measure exact chemical composition. Laboratory confirmation recommended for critical decisions.'
 
-        if (typeof min !== 'number' || typeof max !== 'number' || min > max || conf < min || conf > max) {
-          min = Math.max(0, conf - 4)
-          max = Math.min(100, conf + 4)
+        // Enforce CI contains confidence point estimate
+        const conf = typeof parsed.confidence === 'number' ? Math.max(1, Math.min(99, parsed.confidence)) : 85
+        let ciMin = parsed.confidenceInterval?.min
+        let ciMax = parsed.confidenceInterval?.max
+        if (typeof ciMin !== 'number' || typeof ciMax !== 'number' || ciMin > ciMax || conf < ciMin || conf > ciMax) {
+          ciMin = Math.max(0, conf - 5)
+          ciMax = Math.min(100, conf + 5)
         }
         parsed.confidence = conf
-        parsed.confidenceInterval = { min, max }
+        parsed.confidenceInterval = { min: ciMin, max: ciMax }
 
-        console.log(`[Gemini Vision] Successfully analyzed image with model ${modelName}. Score: ${parsed.score}, Confidence: ${parsed.confidence}% (${parsed.confidenceInterval.min}-${parsed.confidenceInterval.max}% CI)`)
+        console.log(`[Gemini Vision][${requestId}] SUCCESS — model=${modelName}, visual_class=${parsed.visual_class || 'N/A'}, score=${parsed.score}, confidence=${conf}%, status=${parsed.overallStatus}`)
         return parsed
       }
+
+      console.warn(`[Gemini Vision][${requestId}] Model ${modelName} returned unexpected structure — score or parameters missing`)
     } catch (err) {
-      console.error(`[Gemini Vision Error] Model ${modelName} failed: ${err.message}`)
+      console.error(`[Gemini Vision][${requestId}] Model ${modelName} error: ${err.message}`)
       errors.push({ model: modelName, error: err.message })
     }
   }
 
-  console.error(`[Gemini Vision Critical] All candidate models failed:`, JSON.stringify(errors, null, 2))
-  console.warn(`[Gemini Vision] Falling back to heuristic-engine.`)
-  return getFallbackAnalysis(metadata)
+  console.error(`[Gemini Vision][${requestId}] All models failed:`, JSON.stringify(errors, null, 2))
+  
+  // If user provided an image and AI failed to process it, DO NOT return a fake good score!
+  return {
+    isValidFeedImage: true,
+    analysis_failed: true,
+    failure_reason: 'AI Vision Service is currently busy or rate-limited. Unable to perform visual mold screening on your photo. Please retry in a few moments.',
+    failure_reason_hi: 'AI विज़न सेवा वर्तमान में व्यस्त है। कृपया कुछ क्षण बाद पुनः प्रयास करें।'
+  }
 }
 
 /**
- * Fallback agronomy heuristic engine when AI key or internet is unavailable.
+ * Input-driven heuristic fallback — used ONLY when Gemini cannot be reached.
+ * Score is derived from farmer-reported observable inputs (smell, storage, duration).
+ * NEVER returns a hardcoded fixed score — every input combination produces different results.
  */
 function getFallbackAnalysis(metadata = {}) {
-  const { sampleType = 'Silage', storageDuration = 20, storageCondition = 'Covered Pit' } = metadata
+  const {
+    sampleType = 'Silage',
+    feedType = 'Maize Silage',
+    storageDuration = 20,
+    storageCondition = 'Covered Pit',
+    smell = 'Neutral',
+    herdSize = 10,
+    milkPrice = 40
+  } = metadata
   const isSilage = sampleType.toLowerCase().includes('silage')
-  const parameters = calculateMockParameters(sampleType, storageDuration, storageCondition)
 
-  const isAdulterated = parameters.adulteration_flag?.status === 'Bad'
-  const aflatoxinHigh = parameters.aflatoxin_level?.status === 'Bad'
+  // ── Score starts at a neutral 72 and is ADJUSTED by observable inputs ──
+  // This ensures different inputs produce different scores, not a hardcoded 84.
+  let score = 72
+  const riskFactors = []
+  const positiveFactors = []
 
-  let score = 84
-  let overallStatus = 'Good'
-  if (isAdulterated || aflatoxinHigh) {
-    score = 42
-    overallStatus = 'Bad'
-  } else if (parameters.moisture.status === 'Warning' || parameters.crude_protein.status === 'Warning') {
-    score = 69
-    overallStatus = 'Warning'
+  // Smell is the strongest observable spoilage indicator
+  const smellLower = String(smell || 'Neutral').toLowerCase()
+  if (smellLower.includes('putrid') || smellLower.includes('rotten')) {
+    score -= 35
+    riskFactors.push('Putrid/rotten smell strongly indicates clostridial spoilage or protein degradation')
+  } else if (smellLower.includes('musty') || smellLower.includes('moldy')) {
+    score -= 22
+    riskFactors.push('Musty odor suggests active mold growth and potential mycotoxin presence')
+  } else if (smellLower.includes('vinegar') || smellLower.includes('acetic')) {
+    score -= 12
+    riskFactors.push('Strong vinegar (acetic acid) smell indicates acetate fermentation, not optimal lactic preservation')
+  } else if (smellLower.includes('sweet') || smellLower.includes('lactic')) {
+    score += 10
+    positiveFactors.push('Sweet lactic aroma indicates proper lactic acid fermentation')
+  } else if (smellLower.includes('neutral') || smellLower.includes('normal')) {
+    score += 3
+    positiveFactors.push('Neutral smell — no obvious spoilage indicators')
   }
 
-  const confidence = 91
-  // Guarantee CI strictly contains confidence (91 is between 87 and 95)
-  const confidenceInterval = { min: Math.max(0, confidence - 4), max: Math.min(100, confidence + 4) }
+  // Storage condition
+  const scLower = String(storageCondition || '').toLowerCase()
+  if (scLower.includes('open') || scLower.includes('stack')) {
+    score -= 15
+    riskFactors.push('Open air storage significantly increases aerobic spoilage and mold risk')
+  } else if (scLower.includes('silo bag') || scLower.includes('bag')) {
+    score += 5
+    positiveFactors.push('Silo bag provides good anaerobic sealing')
+  } else if (scLower.includes('covered pit') || scLower.includes('covered')) {
+    score += 8
+    positiveFactors.push('Covered pit provides good anaerobic preservation conditions')
+  }
 
-  const keyIndicators = isSilage ? [
-    'Uniform green-olive coloration observed in forage matrix',
-    'Moisture distribution appears consistent across sample',
-    'No visible black or white mycotoxin mold clusters detected',
-    'Stem and leaf particles exhibit good packing density'
-  ] : [
-    'Uniform pellet durability with low powder residue',
-    'Natural cereal grain coloration with no visible mold clumping',
-    'Consistent moisture levels compliant with safe bag storage'
-  ]
+  // Storage duration
+  const dur = Number(storageDuration) || 0
+  if (isSilage) {
+    if (dur > 90) { score -= 10; riskFactors.push(`Extended storage (${dur} days) increases aerobic exposure and nutrient loss risk`) }
+    else if (dur > 45) { score -= 4; riskFactors.push(`Storage duration (${dur} days) approaching upper limit for optimal quality`) }
+    else if (dur >= 21 && dur <= 45) { score += 6; positiveFactors.push('Storage duration within optimal fermentation window (21-45 days)') }
+    else if (dur < 14) { score -= 8; riskFactors.push('Silage may not have completed primary fermentation (< 14 days)') }
+  } else {
+    if (dur > 60) { score -= 8; riskFactors.push(`Concentrate stored for ${dur} days — moisture absorption and mold risk elevated`) }
+    else if (dur <= 30) { score += 4; positiveFactors.push('Feed concentrate within recommended storage window') }
+  }
 
+  // Clamp score to valid range
+  score = Math.max(5, Math.min(95, Math.round(score)))
+
+  // Derive status from score
+  let overallStatus = 'Good'
+  let visual_class = 'GOOD'
+  if (score < 40) { overallStatus = 'Bad'; visual_class = 'POOR' }
+  else if (score < 55) { overallStatus = 'Bad'; visual_class = 'POOR' }
+  else if (score < 72) { overallStatus = 'Warning'; visual_class = 'MODERATE' }
+
+  // Confidence is lower for heuristic (no actual image analysis)
+  const confidence = 55
+  const confidenceInterval = { min: Math.max(0, confidence - 12), max: Math.min(100, confidence + 12) }
+
+  const parameters = calculateMockParameters({ sampleType, moisture: null, crude_protein: null })
   const advisories = generateAdvisoriesForParameters(parameters, sampleType)
   const mycotoxinRiskRadar = calculateMycotoxinRiskRadar(parameters, metadata)
-  const costOfPoorQuality = calculateCostOfPoorQuality(score, metadata.herdSize || 10, metadata.milkPrice || 40)
+  const costOfPoorQuality = calculateCostOfPoorQuality(score, herdSize, milkPrice)
 
   const heatmapRegions = [
-    { x: 38, y: 44, radius: 26, impact: overallStatus === 'Good' ? 'low' : 'medium', label: 'Primary Forage Area' },
-    { x: 68, y: 28, radius: 20, impact: overallStatus === 'Bad' ? 'high' : 'low', label: 'Peripheral Exposure Region' }
+    { x: 40, y: 45, radius: 28, impact: overallStatus === 'Good' ? 'low' : overallStatus === 'Warning' ? 'medium' : 'high', label: 'Primary Sample Area (Input-Based Estimate)' },
+    { x: 70, y: 25, radius: 18, impact: overallStatus === 'Bad' ? 'high' : 'low', label: riskFactors.length > 0 ? 'Risk Indicator Area' : 'Secondary Region' }
   ]
+
+  const keyIndicators = [
+    ...riskFactors.map(f => `⚠ ${f}`),
+    ...positiveFactors.map(f => `✓ ${f}`),
+    `Storage: ${storageCondition} — ${dur} days`,
+    'Note: Visual AI analysis unavailable — this estimate is based on farmer-reported inputs only'
+  ].slice(0, 5)
+
+  console.log(`[Gemini Vision][Heuristic] Input-driven score=${score} (${overallStatus}), smell=${smell}, storage=${storageCondition}, dur=${dur}d, risks=${riskFactors.length}`)
 
   return {
     score,
     confidence,
     confidenceInterval,
     overallStatus,
-    aiModelUsed: 'heuristic-engine',
-    aiExplanation: overallStatus === 'Good'
-      ? `Sample displays typical well-preserved ${metadata.feedType || 'silage'} traits with balanced moisture and standard protein indicators.`
-      : `Sample exhibits parameter variances requiring attention, specifically moisture management and mold vigilance.`,
+    visual_class,
+    aiModelUsed: 'input-heuristic',
+    aiExplanation: riskFactors.length > 0
+      ? `Input-based assessment (AI image analysis unavailable): ${riskFactors[0]}. Score of ${score}/100 derived from farmer-reported smell, storage type, and duration.`
+      : `Input-based assessment (AI image analysis unavailable): No major risk signals detected from reported inputs. Score of ${score}/100 reflects ${storageCondition} storage with ${dur}-day duration.`,
     keyIndicators,
     heatmapRegions,
     advisories,
     recommendations: overallStatus === 'Good'
-      ? 'Feed sample meets recommended dairy nutritional standards. Continue regular ration balancing.'
-      : 'Review feeding ration and isolate suspicious feed batches until confirmatory laboratory tests are completed.',
+      ? 'Input-based screening suggests acceptable conditions. Upload a clear image for AI visual confirmation.'
+      : `Inputs indicate potential quality concerns. ${riskFactors[0] || 'Review storage and feeding protocols.'}`,
     parameters,
     mycotoxinRiskRadar,
     costOfPoorQuality,
-    disclaimer: 'Screening estimate for management decision support. Not a regulatory laboratory assay.'
+    disclaimer: '⚠ AI visual analysis was unavailable. This result is estimated from farmer-reported inputs (smell, storage type, duration) only — NOT from image analysis. Upload a clear feed photo for accurate visual screening.'
   }
 }
 
@@ -308,20 +453,36 @@ export async function chatWithAssistant(msgOrOpts, history = [], language = 'en'
   }
 
   const isHindi = language === 'hi' || language === 'Hindi' || /[\u0900-\u097F]/.test(message)
-  const systemPrompt = `You are SmartFeed AI Assistant, a world-class AI Agronomist, Animal Nutritionist, and Dairy Farming Expert.
+  const systemPrompt = `You are SmartFeed AI Assistant — a world-class AI Agronomist, Animal Nutritionist, and Dairy Farming Expert built specifically for Indian dairy farmers.
 
-Core Responsibilities:
-1. Provide comprehensive, accurate, and scientifically validated answers regarding feed quality, silage fermentation (pH, lactic acid, packing density, inoculants, anaerobic sealing), cattle nutrition (TMR, dry matter intake, crude protein, bypass fat), disease/mycotoxin prevention (aflatoxin, vomitoxin, zearalenone), fodder crops (Maize, Napier, Lucerne, Sorghum, Berseem), and dairy milk yield optimization.
-2. Context Integration: If the farmer's farm data is provided below, directly reference their specific samples, batches, milk yield trend, and farm status:
+=== CORE RULES (MUST FOLLOW STRICTLY) ===
+1. ANSWER THE SPECIFIC QUESTION: Read the user's exact question carefully and answer IT specifically. Do NOT give generic copy-paste agriculture advice unrelated to what was asked.
+2. NO HALLUCINATION: Do NOT invent lab test results, fake statistics, or made-up scientific citations. If you are unsure, say so clearly.
+3. USE FARM CONTEXT: The farmer's actual farm data is provided below. Reference their specific numbers (scores, batch IDs, feed types, milk yield) when relevant — do NOT ignore this data.
+4. NO FILLER RESPONSES: Never output a generic paragraph that doesn't directly answer the question. Every response must be directly relevant and actionable.
+5. COMPLETE ANSWERS: Do not cut off mid-answer. Give complete, thorough guidance.
+
+=== FARMER'S FARM CONTEXT ===
 ${JSON.stringify(context || {}, null, 2)}
-3. Language: If the user writes in Hindi or the selected language is Hindi (हिंदी), answer in natural, fluent, easy-to-understand Hindi (हिंदी) with Devanagari script. Otherwise, reply in clear, professional English.
 
-Strict Formatting Guidelines:
-- Clean Structured Layout: Use clear headings (e.g. ### 1. Immediate Mold Remediation, ### 2. Milk Yield Recovery Plan).
-- Bullet Points: Use clear bullet points (- or *) for lists, action steps, and guidelines.
-- Key Term Highlights: Bold important terms, dosage numbers, percentages, and alerts (e.g., **Toxin Binder**, **62-68% Moisture**, **16% Crude Protein**).
-- Readability: Keep paragraphs short (2-3 sentences max) and avoid raw unstructured text dumps or broken markdown symbols.
-- Completeness: Give complete, thorough step-by-step guidance without cutting off abruptly.`
+=== LANGUAGE ===
+If the user writes in Hindi or language is set to Hindi (हिंदी), reply in fluent, natural Hindi (Devanagari script).
+Otherwise, reply in clear, professional English.
+
+=== EXPERTISE AREAS ===
+- Feed quality screening & silage fermentation (pH, lactic acid, packing density, inoculants, anaerobic sealing)
+- Cattle nutrition (TMR, dry matter intake, crude protein, bypass fat, energy balancing)
+- Mycotoxin & disease prevention (aflatoxin, vomitoxin, zearalenone, DON)
+- Fodder crop management (Maize, Napier, Lucerne, Sorghum, Berseem, Bajra)
+- Dairy milk yield optimization and ration balancing
+- Feed cost optimization for smallholder Indian dairy farms
+
+=== FORMATTING RULES ===
+- Use clear headings: ### 1. Immediate Action, ### 2. Treatment Plan
+- Use bullet points (- or *) for action steps and lists
+- Bold critical terms, dosages, percentages: **Toxin Binder**, **62-68% Moisture**, **16% Crude Protein**
+- Keep paragraphs short (2-3 sentences max)
+- Always give complete answers without abrupt cutoffs`
 
   // Clean & ensure strict alternating user/model conversation structure for Gemini
   const contents = []

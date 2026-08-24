@@ -4,6 +4,7 @@ import TestResult from '../models/TestResult.js'
 import MilkYieldLog from '../models/MilkYieldLog.js'
 import { isDbConnected } from '../config/db.js'
 import { memoryStore } from '../utils/memoryStore.js'
+import { invalidateSuggestionsCache } from '../services/personalizationService.js'
 
 function generateBatchNumber(type = 'Silage') {
   const prefix = type.toLowerCase().includes('feed') ? 'FEED' : 'SILAGE'
@@ -89,9 +90,11 @@ export async function createBatch(req, res, next) {
 
     if (isDbConnected()) {
       const created = await Batch.create(newBatch)
+      invalidateSuggestionsCache(farmerId)
       return res.status(201).json(created)
     } else {
       memoryStore.batches.unshift(newBatch)
+      invalidateSuggestionsCache(farmerId)
       return res.status(201).json(newBatch)
     }
   } catch (err) {
@@ -101,6 +104,7 @@ export async function createBatch(req, res, next) {
 
 export async function updateBatch(req, res, next) {
   try {
+    const farmerId = req.farmerId
     const batchId = req.params.id
     const updates = req.body
 
@@ -110,10 +114,12 @@ export async function updateBatch(req, res, next) {
         { $set: updates },
         { new: true }
       )
+      invalidateSuggestionsCache(farmerId)
       return res.json(batch)
     } else {
       const batch = memoryStore.batches.find(b => String(b._id || b.id) === String(batchId) || b.id === batchId)
       if (batch) Object.assign(batch, updates)
+      invalidateSuggestionsCache(farmerId)
       return res.json(batch || {})
     }
   } catch (err) {

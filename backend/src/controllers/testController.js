@@ -55,14 +55,31 @@ export async function createTest(req, res, next) {
       const lang = req.body.language || req.query.lang || 'en'
       const isHi = lang === 'hi' || lang === 'Hindi' || lang === 'हिंदी' || String(lang).toLowerCase().includes('hi')
       const message = isHi
-        ? (aiAnalysis.rejectionReasonHi || 'अमान्य फ़ोटो: अपलोड की गई छवि पशु आहार, हरा चारा या साइलेज नहीं है। कृपया पशु आहार पेलेट्स, हरे/सूखे चारे या साइलेज पिट नमूने की स्पष्ट फ़ोटो अपलोड करें।')
-        : (aiAnalysis.rejectionReason || 'Invalid Image: The uploaded photo does not appear to be cattle feed, fodder, or silage. Please upload a clear photo of cattle feed, fodder, or a silage pit sample.')
+        ? (aiAnalysis.rejectionReasonHi || 'अमान्य फ़ोटो: अपलोड की गई छवि पशु आहार, हरा चारा या साइलेज नहीं है।')
+        : (aiAnalysis.rejectionReason || 'Invalid Image: The uploaded photo does not appear to be cattle feed, fodder, or silage.')
       return res.status(400).json({
         error: 'INVALID_FEED_IMAGE',
         message,
         isValidFeedImage: false
       })
     }
+
+    // Check if AI could not reliably analyze the image (blurry, too dark, insufficient detail)
+    if (aiAnalysis && aiAnalysis.analysis_failed === true) {
+      const lang = req.body.language || req.query.lang || 'en'
+      const isHi = lang === 'hi' || lang === 'Hindi' || lang === 'हिंदी' || String(lang).toLowerCase().includes('hi')
+      const message = isHi
+        ? (aiAnalysis.failure_reason_hi || 'छवि विश्लेषण विफल: फ़ोटो से पर्याप्त दृश्य जानकारी नहीं मिल सकी। कृपया एक स्पष्ट, नज़दीकी और अच्छी रोशनी वाली फ़ोटो अपलोड करें।')
+        : (aiAnalysis.failure_reason || 'Analysis Failed: The AI could not reliably analyze this image. Please upload a clear, close-up, well-lit photo of the feed surface.')
+      return res.status(422).json({
+        error: 'ANALYSIS_FAILED',
+        message,
+        suggestion: lang === 'hi' || lang === 'हिंदी'
+          ? 'स्पष्ट, नज़दीकी और अच्छी रोशनी में फ़ोटो अपलोड करें।'
+          : 'Try uploading a clearer, better-lit, close-up photo of the feed or silage surface.'
+      })
+    }
+
 
     const sampleId = generateSampleId()
     const recordId = new mongoose.Types.ObjectId().toString()

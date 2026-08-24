@@ -2,6 +2,7 @@ import mongoose from 'mongoose'
 import MilkYieldLog from '../models/MilkYieldLog.js'
 import { isDbConnected } from '../config/db.js'
 import { memoryStore } from '../utils/memoryStore.js'
+import { invalidateSuggestionsCache } from '../services/personalizationService.js'
 
 // In-memory milk yield logs for offline mode
 if (!memoryStore.milkYieldLogs) {
@@ -67,9 +68,11 @@ export async function logMilkYield(req, res, next) {
 
     if (isDbConnected()) {
       const saved = await MilkYieldLog.create(record)
+      invalidateSuggestionsCache(farmerId)
       return res.status(201).json(saved)
     } else {
       memoryStore.milkYieldLogs.unshift(record)
+      invalidateSuggestionsCache(farmerId)
       return res.status(201).json(record)
     }
   } catch (err) {
@@ -100,15 +103,16 @@ export async function getMilkYieldLogs(req, res, next) {
 
 export async function deleteMilkYieldLog(req, res, next) {
   try {
+    const farmerId = req.farmerId
     const { id } = req.params
+
     if (isDbConnected()) {
-      await MilkYieldLog.findByIdAndDelete(id)
-      return res.json({ success: true })
+      await MilkYieldLog.findOneAndDelete({ _id: id, farmerId })
     } else {
-      const idx = memoryStore.milkYieldLogs.findIndex(l => String(l._id) === id)
-      if (idx !== -1) memoryStore.milkYieldLogs.splice(idx, 1)
-      return res.json({ success: true })
+      memoryStore.milkYieldLogs = memoryStore.milkYieldLogs.filter(l => String(l._id) !== String(id))
     }
+    invalidateSuggestionsCache(farmerId)
+    return res.json({ message: 'Log deleted successfully' })
   } catch (err) {
     next(err)
   }

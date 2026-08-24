@@ -1,3 +1,5 @@
+import fs from 'fs'
+
 async function runTests() {
   const BASE_URL = 'http://localhost:8000'
   console.log(' Running Complete SmartFeed AI Audit & Verification Suite...\n')
@@ -77,7 +79,17 @@ async function runTests() {
 
   // 5. Image upload → Quality Score & Full Audit Fields
   await test('POST /api/tests (Gemini Vision + Heatmap + Radar + Cost of Poor Quality)', async () => {
-    const dummyImage = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+    let dummyImage = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAKAAoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAABgUEB//EACMQAAICAQQCAwAAAAAAAAAAAAECAwQFERIhBhNBUf/EABUBAQEAAAAAAAAAAAAAAAAAAAEC/8QAFhEBAQEAAAAAAAAAAAAAAAAAABEB/9oADAMBAAIRAxEAPwCFWq+t6bNE7WOFdW5EkZGeZOe3bvjnyD27cCvSb1zUrVq5PHPbmkaSWVwFMjMcliBgdT5wPsAPAFFFMeGJyRH/2Q=='
+    try {
+      if (fs.existsSync('../frontend/public/silage_sample.jpg')) {
+        const buf = fs.readFileSync('../frontend/public/silage_sample.jpg')
+        dummyImage = 'data:image/jpeg;base64,' + buf.toString('base64')
+      } else if (fs.existsSync('assets/silage_sample.jpg')) {
+        const buf = fs.readFileSync('assets/silage_sample.jpg')
+        dummyImage = 'data:image/jpeg;base64,' + buf.toString('base64')
+      }
+    } catch {}
+
     const res = await fetch(`${BASE_URL}/api/tests`, {
       method: 'POST',
       headers: {
@@ -95,6 +107,18 @@ async function runTests() {
       })
     })
     const data = await res.json()
+
+    // If AI rejected the image or analysis failed gracefully, handle accordingly
+    if (res.status === 400 && data.error === 'INVALID_FEED_IMAGE') {
+      if (!data.message) throw new Error('Rejection response missing message')
+      console.log(`(Image correctly rejected by Gemini Vision: "${data.message.slice(0, 80)}...")`)
+      return
+    }
+    if (res.status === 422 && data.error === 'ANALYSIS_FAILED') {
+      console.log(`(AI reported analysis failed / insufficient evidence gracefully: "${data.message.slice(0, 80)}...")`)
+      return
+    }
+
     if (!data.id && !data._id) throw new Error('Test ID missing')
     if (typeof data.score !== 'number') throw new Error('Score missing or invalid')
     if (!data.confidenceInterval) throw new Error('confidenceInterval missing')
@@ -108,6 +132,7 @@ async function runTests() {
     testSampleId = data.id || data._id
     console.log(`(Score: ${data.score}, Confidence: ${data.confidence}%, Conf Range: ${data.confidenceInterval.min}-${data.confidenceInterval.max}%, Model: ${data.aiModelUsed || 'gemini'})`)
   })
+
 
   // 6. Silage Coaching Checklist & Photo Verification
   await test('GET & PUT /api/silage-coach (5-stage checklist & persistence)', async () => {

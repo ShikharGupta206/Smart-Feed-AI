@@ -4,6 +4,7 @@ import Farmer from '../models/Farmer.js'
 import { isDbConnected } from '../config/db.js'
 import { memoryStore } from '../utils/memoryStore.js'
 import { signToken } from '../middlewares/auth.js'
+import { invalidateSuggestionsCache } from '../services/personalizationService.js'
 
 export async function signup(req, res, next) {
   try {
@@ -202,11 +203,13 @@ export async function updateProfile(req, res, next) {
         { $set: updates },
         { new: true, runValidators: true }
       ).select('-passwordHash')
+      invalidateSuggestionsCache(farmerId)
       return res.json(updated)
     } else {
       const farmer = memoryStore.farmers.find(f => String(f._id || f.id) === String(farmerId)) || memoryStore.farmers[0]
       Object.assign(farmer, updates, { updatedAt: new Date() })
       const { passwordHash, ...clean } = farmer
+      invalidateSuggestionsCache(farmerId)
       return res.json(clean)
     }
   } catch (err) {

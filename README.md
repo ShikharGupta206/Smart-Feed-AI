@@ -31,7 +31,7 @@ The API health check is available at `http://localhost:8000/api/health`.
 
 ## MongoDB
 
-Set `MONGODB_URI` in `server/.env` to enable MongoDB persistence. Without it, the app uses the built-in demo dataset so the interface remains usable locally.
+Set `MONGODB_URI` in `backend/.env` to enable MongoDB persistence. Without it, the app uses the built-in demo dataset so the interface remains usable locally.
 
 ## Languages
 

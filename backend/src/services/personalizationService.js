@@ -1,3 +1,4 @@
+import mongoose from 'mongoose'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import Farmer from '../models/Farmer.js'
 import TestResult from '../models/TestResult.js'
@@ -15,17 +16,18 @@ function getGenAIClient() {
   return genAI
 }
 
+// Valid Gemini API model identifiers — ordered by availability preference (most stable first)
 const SUPPORTED_MODELS = [
   'gemini-3.5-flash',
   'gemini-3.5-flash-lite',
-  'gemini-flash-latest',
   'gemini-3.7-flash',
-  'gemini-3.6-flash'
+  'gemini-3.6-flash',
+  'gemini-flash-latest'
 ]
 
-// In-memory suggestions cache with 12-hour TTL
+// In-memory suggestions cache with 15-minute TTL for real-time personalization
 const suggestionsCache = new Map()
-const CACHE_TTL_MS = 12 * 60 * 60 * 1000 // 12 hours
+const CACHE_TTL_MS = 15 * 60 * 1000 // 15 minutes
 
 export function invalidateSuggestionsCache(farmerId) {
   if (farmerId) {
@@ -62,15 +64,22 @@ export async function collectFarmerContext(farmerId) {
 
   if (isDbConnected()) {
     try {
-      const farmer = await Farmer.findById(farmerId)
-      if (farmer) {
-        context.farmerName = farmer.name || context.farmerName
-        context.cattleCount = farmer.cattleCount || context.cattleCount
-        context.location = farmer.location || context.location
-        context.language = farmer.language || context.language
+      const farmerObjId = mongoose.isValidObjectId(farmerId) ? new mongoose.Types.ObjectId(farmerId) : null
+      const farmerFilter = farmerObjId 
+        ? { $or: [{ farmerId }, { farmerId: String(farmerId) }, { farmerId: farmerObjId }] }
+        : { $or: [{ farmerId }, { farmerId: String(farmerId) }] }
+
+      if (farmerObjId) {
+        const farmer = await Farmer.findById(farmerObjId)
+        if (farmer) {
+          context.farmerName = farmer.name || context.farmerName
+          context.cattleCount = farmer.cattleCount || context.cattleCount
+          context.location = farmer.location || context.location
+          context.language = farmer.language || context.language
+        }
       }
 
-      const tests = await TestResult.find({ farmerId }).sort({ createdAt: -1 }).limit(10)
+      const tests = await TestResult.find(farmerFilter).sort({ createdAt: -1 }).limit(10)
       if (tests && tests.length > 0) {
         context.totalTests = tests.length
         const scores = tests.map(t => t.score || 80)
@@ -102,13 +111,13 @@ export async function collectFarmerContext(farmerId) {
         }))
       }
 
-      const milkLogs = await MilkYieldLog.find({ farmerId }).sort({ date: -1 }).limit(5)
+      const milkLogs = await MilkYieldLog.find(farmerFilter).sort({ date: -1 }).limit(5)
       if (milkLogs && milkLogs.length > 0) {
         const latest = milkLogs[0]
         context.milkYieldTrend = `${latest.yieldLitersPerCow || 14.5} L/cow/day (Fat: ${latest.fatPercentage || 4.2}%)`
       }
 
-      const coachSteps = await SilageCoachStep.find({ farmerId }).sort({ stageNumber: 1 })
+      const coachSteps = await SilageCoachStep.find(farmerFilter).sort({ stageNumber: 1 })
       if (coachSteps && coachSteps.length > 0) {
         const stuck = coachSteps.find(s => !s.completed)
         if (stuck) {
@@ -118,7 +127,7 @@ export async function collectFarmerContext(farmerId) {
         }
       }
 
-      const activeBatches = await Batch.find({ farmerId, status: 'Active' })
+      const activeBatches = await Batch.find({ ...farmerFilter, status: 'Active' })
       context.activeBatchesCount = activeBatches?.length || 1
     } catch (e) {
       console.warn(`[Personalization Context DB] Error: ${e.message}. Using memory fallback.`)
